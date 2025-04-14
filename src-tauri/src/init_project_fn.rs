@@ -4,6 +4,10 @@ use std::path::PathBuf;
 use crate::globals::ProjectInfo;
 use crate::globals::PROJECT_PATH;
 
+use serde::{Serialize, Deserialize};
+use std::io::Write;
+use crate::fs;
+use tokio::fs as other_fs;
 
 #[tauri::command]
 pub fn get_projects(app_handle: tauri::AppHandle) -> Result<Vec<ProjectInfo>, String> {
@@ -119,4 +123,47 @@ fn create_directories_if_not_exist(dirs: Vec<&str>, base_path: &PathBuf) {
             println!("Папка уже существует: {:?}", path);
         }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct ProjectData {
+    name: String,
+}
+
+#[tauri::command]
+pub fn save_project_name(app_handle: tauri::AppHandle, name: String) -> Result<(), String> {
+    let base_path = app_handle
+        .path_resolver()
+        .app_data_dir()
+        .ok_or_else(|| "Не удалось определить папку данных приложения.".to_string())?;
+
+    // Создаем директорию, если она не существует
+    fs::create_dir_all(&base_path).map_err(|e| format!("Ошибка создания папки: {}", e))?;
+
+    let data = ProjectData { name };
+    let json = serde_json::to_string_pretty(&data).map_err(|e| format!("Ошибка сериализации: {}", e))?;
+
+    let file_path = base_path.join("project.json");
+    let mut file = File::create(&file_path).map_err(|e| format!("Ошибка создания файла: {}", e))?;
+
+    file.write_all(json.as_bytes()).map_err(|e| format!("Ошибка записи файла: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn load_project_name(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let base_path = app_handle
+        .path_resolver()
+        .app_data_dir()
+        .ok_or_else(|| "Не удалось определить папку данных приложения.".to_string())?
+        .join("project.json");
+
+    let contents = std::fs::read_to_string(&base_path)
+        .map_err(|e| format!("Не удалось прочитать файл: {}", e))?;
+
+    let data: ProjectData = serde_json::from_str(&contents)
+        .map_err(|e| format!("Ошибка парсинга JSON: {}", e))?;
+
+    Ok(data.name)
 }

@@ -127,11 +127,44 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
     const fetchProjects = async () => {
         try {
             const projectList = await invoke('get_projects');
-            setProjects(projectList);
+            const savedProjectName = await invoke('load_project_name');
             
+            // Ищем проект с сохранённым именем
+            const matchedProject = projectList.find((project) => project.name === savedProjectName);
+    
+            const updatedProjects = projectList.map((project) => ({
+                ...project,
+                is_used: project.name === savedProjectName,
+            }));
+    
+            setProjects(updatedProjects);
+    
+            if (matchedProject) {
+                setSelectedProject({ ...matchedProject, is_used: true });
+                console.log("Автоматически выбран проект:", matchedProject.name);
+                setProject({ isCurrent: false, name: matchedProject.name });
+    
+                // Автоматически вызываем handleSave-подобную логику
+                updateSettings();
+                fetchTemplate();
+                getSavedPrinter();
+    
+                [1, 2, 3, 4].forEach(async (index) => {
+                    try {
+                        const image = await invoke('get_image_path', { path: `background/${index}_background` });
+                        const url_image = `url(${convertFileSrc(image)})`;
+                        setBackgroundImage(`${matchedProject.name}_background_image_${index}`, `background_image_${index}`, url_image);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                });
+            } else {
+                console.log("Сохранённый проект не найден среди списка.");
+            }
+    
         } catch (err) {
-            console.error(err);
-            alert('Не удалось загрузить список проектов.');
+            const projectList = await invoke('get_projects');
+            setProjects(projectList);
         }
     };
 
@@ -143,6 +176,7 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
         if (selectedProject) {
             try {
                 await invoke('select_project', { projectName: selectedProject.name });
+                await invoke('save_project_name', { name: selectedProject.name});
                 setProject({ isCurrent: false, name: selectedProject.name });
                 console.log(selectedProject.name);
                 updateSettings();
@@ -178,7 +212,7 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
     
 
 
-    const handlePrinterChange = (id) => {
+    const handleProjectChange = (id) => {
         setProjects((prevProjects) => 
             prevProjects.map((project) => ({
                 ...project,
@@ -226,9 +260,9 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                                             type="radio"
                                             name="selectedProject"
                                             checked={project.is_used}
-                                            onChange={() => handlePrinterChange(project.id)}
+                                            onChange={() => handleProjectChange(project.id)}
                                         />
-                                        <span onClick={() => handlePrinterChange(project.id)} style={{cursor: 'pointer'}}>{project.name}</span>
+                                        <span onClick={() => handleProjectChange(project.id)} style={{cursor: 'pointer'}}>{project.name}</span>
                                     </div>
                                     <button onClick={() => removeProject(project.id)} className="delete-button bg-red-500 text-white px-2 py-1 rounded-md">
                                         Удалить

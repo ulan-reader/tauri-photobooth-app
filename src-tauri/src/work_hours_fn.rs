@@ -35,7 +35,7 @@ pub fn set_work_hours(start: String, end: String, is_always_active: bool) -> Res
         .clone()
         .ok_or("Project path is not set. Call update_project_path first.")?;
 
-    let mut script_dir = base_path.join("settings");
+    let mut script_dir = base_path.join("time");
     let _ = create_powershell_script(script_dir.clone());
     script_dir = script_dir.join("wake_script.ps1");
     let str_script_dir = script_dir.to_string_lossy();
@@ -69,7 +69,6 @@ pub fn set_work_hours(start: String, end: String, is_always_active: bool) -> Res
     // }
     
     // Настраиваем таймер на вход в спящий режим
-    if !(sleep_time == wake_time) && !is_always_active {
 
         let sleep_time_formatted = sleep_time.format("%H:%M:%S").to_string();
         let remote_sleep_script = r#"
@@ -144,8 +143,6 @@ Remove-Item $taskXmlPath -Force
             let _output = Command::new("powershell")
             .args(&["-Command", &remote_sleep_script])
             .creation_flags(CREATE_NO_WINDOW) // <-- Отключает всплывающее окно PowerShell
-            .stdout(Stdio::null()) // Отключает вывод в консоль
-            .stderr(Stdio::null()) // Отключает ошибки в консоль
             .output()
             .map_err(|e| format!("Failed to execute PowerShell script: {}", e))?;
         }
@@ -153,8 +150,6 @@ Remove-Item $taskXmlPath -Force
             let _output = Command::new("powershell")
             .args(&["-Command", &ps_sleep_script])
             .creation_flags(CREATE_NO_WINDOW) // <-- Отключает всплывающее окно PowerShell
-            .stdout(Stdio::null()) // Отключает вывод в консоль
-            .stderr(Stdio::null()) // Отключает ошибки в консоль
             .output()
             .map_err(|e| format!("Failed to execute PowerShell script: {}", e))?;    
         }
@@ -176,7 +171,6 @@ Remove-Item $taskXmlPath -Force
         //         thread::sleep(Duration::from_secs(30));
         //     }
         // });
-    }
     let wake_time_formatted = wake_time.format("%H:%M:%S").to_string();
 
     let remote_wake_script = r#"
@@ -263,7 +257,7 @@ Remove-Item $taskXmlPath -Force
         .map_err(|e| format!("Failed to execute PowerShell script: {}", e))?;
     }
     else{
-        println!("{}", ps_wake_script);
+        // println!("{}", ps_wake_script);
         let _output = Command::new("powershell")
         .args(&["-Command", &ps_wake_script])
         .creation_flags(CREATE_NO_WINDOW) // <-- Отключает всплывающее окно PowerShell
@@ -283,9 +277,6 @@ fn create_powershell_script(folder_path: PathBuf) -> Result<String, String> {
     
     // Создаём путь к файлу
     let script_path = path.join("wake_script.ps1");
-    if !script_path.exists() {
-        return Ok(Default::default())
-    }
     
     // PowerShell-код
     let script_content = r#"
@@ -304,7 +295,7 @@ public class Keyboard {
 
 Start-Sleep -Seconds 3  # Ждём 3 секунды после пробуждения
 [Keyboard]::PressKey(0x0D)  # 0x0D — это клавиша "Enter"
-Start-Sleep -Seconds 30  # Ждём 30 секунды после пробуждения
+Start-Sleep -Seconds 60  # Ждём 30 секунды после пробуждения
 [Keyboard]::PressKey(0x0D)  # 0x0D — это клавиша "Enter"
 Start-Sleep -Seconds 5  # Ждём 5 секунд после пробуждения
 [Keyboard]::PressKey(0x0D)  # 0x0D — это клавиша "Enter"

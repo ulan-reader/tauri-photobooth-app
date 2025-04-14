@@ -13,7 +13,7 @@ mod init_project_fn;
 mod license;
 
 use globals::{LicenseState, PrinterState, PROJECT_PATH, TemplatePaths};
-use init_project_fn::{get_projects, select_project, delete_project};
+use init_project_fn::{get_projects, select_project, delete_project, save_project_name, load_project_name};
 use printer_fn::{saving_printer_data, get_printers_info, update_selected_printer, printer_information, printer_settings, printer_status};
 use image_fn::{delete_image, get_image_path, save_image, get_image_paths};
 use chromokey_fn::{save_settings, read_settings};
@@ -1062,7 +1062,7 @@ async fn main() {
             download_ev_image_command,
             get_captured_image,
             stop_live_view,
-            get_printers_info, get_projects, select_project, delete_project,
+            get_printers_info, get_projects, select_project, delete_project, save_project_name, load_project_name,
             saving_printer_data,
             update_selected_printer,
             end_camera, save_settings,
