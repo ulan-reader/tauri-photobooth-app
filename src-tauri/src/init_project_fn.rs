@@ -1,5 +1,8 @@
 use std::fs::*;
 use std::path::PathBuf;
+use std::io::Write;
+
+use serde_json::json;
 
 use crate::globals::ProjectInfo;
 use crate::globals::PROJECT_PATH;
@@ -58,6 +61,8 @@ pub fn select_project(app_handle: tauri::AppHandle, project_name: String) -> Res
     *PROJECT_PATH.lock().unwrap() = Some(project_path);
     println!("PROJECT_PATH: {:?}", PROJECT_PATH.lock().unwrap());
     // setting_dir()?;
+
+    tauri::async_runtime::spawn(save_project_name(app_handle.clone(), project_name.clone()));
     tauri::async_runtime::spawn(setting_dir());
     Ok(())
 }
@@ -125,45 +130,49 @@ fn create_directories_if_not_exist(dirs: Vec<&str>, base_path: &PathBuf) {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct ProjectData {
-    name: String,
-}
-
-#[tauri::command]
-pub fn save_project_name(app_handle: tauri::AppHandle, name: String) -> Result<(), String> {
+async fn save_project_name(app_handle: tauri::AppHandle, name: String) -> Result<(), String> {
     let base_path = app_handle
         .path_resolver()
-        .app_data_dir()
+        .app_local_data_dir()
         .ok_or_else(|| "Не удалось определить папку данных приложения.".to_string())?;
-
+    
     // Создаем директорию, если она не существует
-    fs::create_dir_all(&base_path).map_err(|e| format!("Ошибка создания папки: {}", e))?;
+    std::fs::create_dir_all(&base_path).map_err(|e| format!("Ошибка создания папки: {}", e))?;
 
-    let data = ProjectData { name };
-    let json = serde_json::to_string_pretty(&data).map_err(|e| format!("Ошибка сериализации: {}", e))?;
+    let json = json!({ "name": name });
+
+    let json_str = serde_json::to_string_pretty(&json)
+        .map_err(|e| format!("Ошибка сериализации: {}", e))?;
 
     let file_path = base_path.join("project.json");
     let mut file = File::create(&file_path).map_err(|e| format!("Ошибка создания файла: {}", e))?;
 
-    file.write_all(json.as_bytes()).map_err(|e| format!("Ошибка записи файла: {}", e))?;
+    file.write_all(json_str.as_bytes())
+        .map_err(|e| format!("Ошибка записи файла: {}", e))?;
 
     Ok(())
 }
 
+
 #[tauri::command]
 pub fn load_project_name(app_handle: tauri::AppHandle) -> Result<String, String> {
-    let base_path = app_handle
+    let file_path = app_handle
         .path_resolver()
-        .app_data_dir()
+        .app_local_data_dir()
         .ok_or_else(|| "Не удалось определить папку данных приложения.".to_string())?
         .join("project.json");
 
-    let contents = std::fs::read_to_string(&base_path)
+    let contents = std::fs::read_to_string(&file_path)
         .map_err(|e| format!("Не удалось прочитать файл: {}", e))?;
 
-    let data: ProjectData = serde_json::from_str(&contents)
+    // Парсим как JSON-объект
+    let json_value: serde_json::Value = serde_json::from_str(&contents)
         .map_err(|e| format!("Ошибка парсинга JSON: {}", e))?;
 
-    Ok(data.name)
+    // Достаём name как строку
+    let name = json_value["name"]
+        .as_str()
+        .ok_or_else(|| "Поле 'name' не найдено или не строка".to_string())?;
+
+    Ok(name.to_string())
 }

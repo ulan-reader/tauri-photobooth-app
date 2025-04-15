@@ -1,162 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Moon, Sun, Layout, Fingerprint, Printer, Power, BarChart2 } from "lucide-react"
-import Image_icon from '../assets/image_icon.svg';
+import { Link, useNavigate } from 'react-router-dom';
+import { Moon, Sun, Image, Layout, Fingerprint, Printer, Power, BarChart2 } from "lucide-react"
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke, convertFileSrc } from '@tauri-apps/api/tauri';
 import { useStore } from './store';
 
 
 export default function Settings({ isDarkMode, setIsDarkMode }) {
+    const navigate = useNavigate();
     usePageNavigation();
-    const { chromokey, setChromokey, setCamera, reference, setReferences, setBackgroundImage, switchCanvas, setCanvasData, chromokeyStatus, updateCameraStatus, updateLiveViewStatus, cameraStatus, isLiveView, chromokeyBackgroundImage, setChromokeyStatus, setChromokeyBackgroundImage, project, setProject } = useStore();
-    const [isVisible, setIsVisible] = useState(false);
-    const [projects, setProjects] = useState([]);
-    const [newProjectName, setNewProjectName] = useState('');
-    const [selectedProject, setSelectedProject] = useState(null);
-    
-    const updateSettings = async () => {
-        try {
-            const settings = await invoke('read_settings');
-
-            if (settings) {
-                setChromokey({ color: settings.color, isEnabled: settings.is_enabled });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo });
-            }
-            
-            const background = await invoke('get_image_path', { path: `settings/chromokey_image`});
-            if (background !== "Image file not found.") {
-                const imageObject = new Image();
-                imageObject.src = convertFileSrc(background);
-                setChromokey({ backgroundImage: { imgObject: imageObject, src: imageObject.src } });
-            } else {
-                const imageObject = new Image();
-                imageObject.src = backgroundUrl;
-                setChromokey({ backgroundImage: { imgObject: imageObject, src: backgroundUrl } });
-            }
-        } catch (err) {
-            console.error('Ошибка загрузки фона:', err);
-        }
-    };
-
-    const getSavedPrinter = async () => {
-        try {
-            const printer = await invoke('update_selected_printer');
-        } catch (err) {
-            console.error(err);
-            // alert('Не удалось загрузить выбранный принтер.');
-        }
-    }
-
-    const fetchTemplate = async () => {
-        if (!project.updateStatus) {
-            try {
-                const backgroundImageInBase64 = await invoke('get_image_path', { path: `settings/references_image` });
-                setReferences({ src: convertFileSrc(backgroundImageInBase64) });
-            } catch (err) {
-                console.error(err);
-            }
-    
-            try {
-                const canvasArray = await invoke('load_all_canvas_data');
-                switchCanvas(1); // Switch to the first canvas
-                if (canvasArray.length === 0 || !canvasArray) {
-                    return;
-                }
-                setCanvasData(canvasArray); // Use the new function to update the canvases
-                setProject({ updateStatus: true });
-            } catch (error) {
-                console.error(error);
-            }
-        }
-    };
-    
-    const fetchProjects = async () => {
-        try {
-            const projectList = await invoke('get_projects');
-            setProjects(projectList);
-            
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось загрузить список проектов.');
-        }
-    };
-
-    useEffect(() => {
-        fetchProjects();
-    }, []);
-
-    const handleSave = async () => {
-        if (selectedProject) {
-            try {
-                await invoke('select_project', { projectName: selectedProject.name });
-                await invoke('save_project_name', { name: selectedProject.name});
-                setProject({ isCurrent: false, name: selectedProject.name });
-                console.log(selectedProject.name);
-                updateSettings();
-                setIsVisible(false);
-                // toast.success("Сохранено успешно!");
-                
-                fetchTemplate();
-                getSavedPrinter();
-                [1, 2, 3, 4].forEach(async (index) => {
-                    try {
-                        const image = await invoke('get_image_path', { path: `background/${index}_background` });
-                        const url_image = `url(${convertFileSrc(image)})`;
-                        setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, url_image);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                });
-                // await invoke('save_projects_and_create_dir', {projects});
-                // await invoke('init_project_path');
-                // fetchImage();
-            } catch (err) {
-                console.error(err);
-                alert("Не удалось сохранить проекты.");
-            }
-        } else {
-            alert("Выберите проект перед сохранением.");
-        }
-        
-        // const backgroundImageInBase64 = await invoke('get_image_path', { path: `database/settings/references_image` });
-        // setReferences({ src: convertFileSrc(backgroundImageInBase64) });
-        // console.log(reference.src);
-    };
-    
-
-
-    const handlePrinterChange = (id) => {
-        setProjects((prevProjects) => 
-            prevProjects.map((project) => ({
-                ...project,
-                is_used: project.id === id, // Только у выбранного проекта is_used = true
-            }))
-        );
-    
-        const selected = projects.find((project) => project.id === id);
-        console.log("Selected project:", selected);
-        setSelectedProject(selected ? { ...selected, is_used: true } : null);
-
-    };
-
-    const addProject = () => {
-        if (newProjectName.trim()) {
-            const newId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1;
-            setProjects([...projects, { id: newId, name: newProjectName.trim(), is_used: false }]);
-            setNewProjectName("");
-        }
-    };
-
-    const removeProject = async (id) => {
-        setProjects((prevProjects) => prevProjects.filter((project) => project.id !== id));
-        projects.map( async (project) => {
-            if (project.id === id) {
-                await invoke('delete_project', { projectName: project.name });
-            }
-        });
-
-    };
+    const { chromokeyStatus, updateCameraStatus, updateLiveViewStatus, cameraStatus, isLiveView, chromokeyBackgroundImage, setChromokeyStatus, setChromokeyBackgroundImage, setProject, project } = useStore();
 
     useEffect(() => {
         const checkStatus = async() => {
@@ -250,9 +103,16 @@ export default function Settings({ isDarkMode, setIsDarkMode }) {
                         >
                             Главный экран
                         </Link>
-                        <button onClick={() => setIsVisible(true)} className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300">
+                        {/* <Link
+                            to='/'
+                            onClick={() => setProject({ updateStatus: true })}
+                            className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300"
+                        >
                             Выбрать проект
-                        </button>
+                        </Link> */}
+                        <button onClick={() => {setProject({ ...project, isCurrent: true, updateStatus: true }); console.log(project); navigate('/')}} className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300">
+                             Выбрать проект
+                         </button>
                         <button
                             onClick={toggleTheme}
                             className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200"
