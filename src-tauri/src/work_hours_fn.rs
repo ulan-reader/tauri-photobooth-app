@@ -240,7 +240,8 @@ $taskXmlPath = "$env:temp\DailyWakeUpTask.xml"
 "@ | Out-File -Encoding UTF8 -FilePath $taskXmlPath
 
 # Register task with XML
-Register-ScheduledTask -Xml (Get-Content $taskXmlPath -Raw) -TaskName "DailyWakeUpTask"
+schtasks /Create /TN "DailyWakeUpTask" /TR "powershell.exe -ExecutionPolicy Bypass -File 'C:\Users\ACER\AppData\Roaming\photobox-kazakhstan.app\Test 1\time\wake_script.ps1'" /SC DAILY /ST 18:48 /RL HIGHEST /F
+
 
 # Remove the temporary XML file
 Remove-Item $taskXmlPath -Force
@@ -257,7 +258,7 @@ Remove-Item $taskXmlPath -Force
         .map_err(|e| format!("Failed to execute PowerShell script: {}", e))?;
     }
     else{
-        // println!("{}", ps_wake_script);
+        println!("{}", ps_wake_script);
         let _output = Command::new("powershell")
         .args(&["-Command", &ps_wake_script])
         .creation_flags(CREATE_NO_WINDOW) // <-- Отключает всплывающее окно PowerShell
