@@ -7,11 +7,6 @@ use serde_json::json;
 use crate::globals::ProjectInfo;
 use crate::globals::PROJECT_PATH;
 
-use serde::{Serialize, Deserialize};
-use std::io::Write;
-use crate::fs;
-use tokio::fs as other_fs;
-
 #[tauri::command]
 pub fn get_projects(app_handle: tauri::AppHandle) -> Result<Vec<ProjectInfo>, String> {
     // Текущая логика получения проектов из директории
