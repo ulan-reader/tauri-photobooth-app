@@ -17,164 +17,69 @@ import { set } from "lodash";
 import printer from "../assets/printer.png";
 import backgroundUrl from "../assets/defaultImage.jpeg";
 import { appDir, configDir } from '@tauri-apps/api/path';
+import { fetchProjects, fetchTemplate, getReferences, getSavedPrinter, handleSaveProject, updateSettings } from "../utils/projectConfig.js";
 
 export default function MainPage({ active, loading, setLoading, setActive, design }) {
     const { license, project, setProject, chromokey, setChromokey, reference, setReferences, setCamera, setCanvasData, currentCanvasId, canvases, switchCanvas, background_image_1, setBackgroundImage } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
-    // const [bgImage, setBgImage] = useState(localStorage.getItem("back_1") || `url(${back_img})`);
     const canvasRefForSelect = useRef(null);
     const navigate = useNavigate();
-    // const [image, setImage] = useState('');
     usePageNavigation();
 
-    // async function getAppDataPath() {
-    //     const path = await configDir();
-    //     console.log('AppData\\Roaming path:', path);
-    // }
-
-    // getAppDataPath();
     useEffect(() => {
         if (!license) navigate('/license');
-    });
-
-    // const fetchImage = async () => {
-    //     try {
-    //         const image = await invoke('get_image_path', { path: `background/1_background` })
-    //         const url_image = `url(${convertFileSrc(image)})`;
-    //         setBgImage(url_image);
-    //         console.log('Image URL:', url_image);
-    //         // if (image && image.trim() !== "") {
-    //             // setBgImage(url_image);
-    //             toast.success(image);
-    //             localStorage.setItem("back_1", url_image);
-    //             toast.success(url_image);
-    //         // } else {
-    //             // throw new Error("Изображение не найдено");
-    //         // }
-    //     } catch (err) {
-    //         localStorage.removeItem("back_1");
-    //         setBgImage(`url(${back_img})`);
-    //         console.error(err);
-    //     }
-    // };
-
-    const fetchTemplate = async () => {
-        if (!project.updateStatus) {
-            try {
-                const backgroundImageInBase64 = await invoke('get_image_path', { path: `settings/references_image` });
-                setReferences({ src: convertFileSrc(backgroundImageInBase64) });
-            } catch (err) {
-                console.error(err);
-            }
-    
-            try {
-                const canvasArray = await invoke('load_all_canvas_data');
-                switchCanvas(1); // Switch to the first canvas
-                if (canvasArray.length === 0 || !canvasArray) {
-                    return;
-                }
-                setCanvasData(canvasArray); // Use the new function to update the canvases
-                setProject({ updateStatus: true });
-            } catch (error) {
-                console.error(error);
-            }
-        }
-    };
-    
-
-
-    const getSavedPrinter = async () => {
-        try {
-            const printer = await invoke('update_selected_printer');
-            if (printer) {
-                setLoading(true);
-            }
-        } catch (err) {
-            console.error(err);
-            // alert('Не удалось загрузить выбранный принтер.');
-        }
-    }
-
-
-    const updateSettings = async () => {
-        try {
-            const settings = await invoke('read_settings');
-
-            if (settings) {
-                setChromokey({ color: settings.color, isEnabled: settings.is_enabled });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo });
-            }
-            
-            const background = await invoke('get_image_path', { path: `settings/chromokey_image`});
-            if (background !== "Image file not found.") {
-                const imageObject = new Image();
-                imageObject.src = convertFileSrc(background);
-                setChromokey({ backgroundImage: { imgObject: imageObject, src: imageObject.src } });
-            } else {
-                const imageObject = new Image();
-                imageObject.src = backgroundUrl;
-                setChromokey({ backgroundImage: { imgObject: imageObject, src: backgroundUrl } });
-            }
-        } catch (err) {
-            console.error('Ошибка загрузки фона:', err);
-        }
-    };
+    }, [license, navigate]);
 
     const [projects, setProjects] = useState([]);
     const [newProjectName, setNewProjectName] = useState('');
     const [selectedProject, setSelectedProject] = useState(null);
     
-    const fetchProjects = async () => {
+    const fetchSavedProject = async () => {
         try {
-            const projectList = await invoke('get_projects');
-            setProjects(projectList);
-            
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось загрузить список проектов.');
+            const savedProjectName = await invoke('load_project_name');
+            // console.log('Saved project name:', savedProjectName);
+            // setSelectedProject({ name: savedProjectName });
+            handleSaveProject({ name: savedProjectName }, setProject, setActive, setBackgroundImage, backgroundUrl);
+            updateSettings(setChromokey, setCamera, backgroundUrl);
+            getReferences(setReferences);
+            fetchTemplate(switchCanvas, setCanvasData);
+            getSavedPrinter(setLoading);
+        } catch (error) {
+            setProject({ ...project, updateStatus: true });
+            console.error('Error loading project name:', error);
         }
-    };
+    }
 
     useEffect(() => {
-        fetchProjects();
+        if (project.isCurrent && project.updateStatus) {
+            // fetchSavedProject();
+            console.log('Start ');
+            fetchProjects(setProjects);
+        }
+        if (project.isCurrent && !project.updateStatus) {
+            const save = async () => {
+                await fetchSavedProject();
+                console.log('Start saved');
+                // await handleSave();
+            }
+
+            save();
+            // fetchProjects(setProjects)
+        }
+        
+        
     }, []);
 
     const handleSave = async () => {
         if (selectedProject) {
-            try {
-                await invoke('select_project', { projectName: selectedProject.name });
-                setProject({ isCurrent: false, name: selectedProject.name });
-                console.log(selectedProject.name);
-                updateSettings();
-                
-                toast.success("Сохранено успешно!");
-                setActive(true);
-                fetchTemplate();
-                getSavedPrinter();
-                [1, 2, 3, 4].forEach(async (index) => {
-                    try {
-                        const image = await invoke('get_image_path', { path: `background/${index}_background` });
-                        const url_image = `url(${convertFileSrc(image)})`;
-                        setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, url_image);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                });
-                // await invoke('save_projects_and_create_dir', {projects});
-                // await invoke('init_project_path');
-                // fetchImage();
-            } catch (err) {
-                console.error(err);
-                alert("Не удалось сохранить проекты.");
-            }
-        } else {
-            alert("Выберите проект перед сохранением.");
+            console.log("Selected project:", selectedProject);
+            handleSaveProject(selectedProject, setProject, setActive, setBackgroundImage, backgroundUrl);
+            updateSettings(setChromokey, setCamera, backgroundUrl);
+            getReferences(setReferences);
+            fetchTemplate(switchCanvas, setCanvasData);
+            getSavedPrinter(setLoading);
         }
-        
-        // const backgroundImageInBase64 = await invoke('get_image_path', { path: `database/settings/references_image` });
-        // setReferences({ src: convertFileSrc(backgroundImageInBase64) });
-        // console.log(reference.src);
-    };
+    }
     
 
 

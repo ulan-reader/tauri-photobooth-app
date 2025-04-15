@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Moon, Sun, Image, Layout, Fingerprint, Printer, Power, BarChart2 } from "lucide-react"
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke } from '@tauri-apps/api/tauri';
@@ -7,8 +7,9 @@ import { useStore } from './store';
 
 
 export default function Settings({ isDarkMode, setIsDarkMode }) {
+    const navigate = useNavigate();
     usePageNavigation();
-    const { chromokeyStatus, updateCameraStatus, updateLiveViewStatus, cameraStatus, isLiveView, chromokeyBackgroundImage, setChromokeyStatus, setChromokeyBackgroundImage } = useStore();
+    const { chromokeyStatus, updateCameraStatus, updateLiveViewStatus, cameraStatus, isLiveView, chromokeyBackgroundImage, setChromokeyStatus, setChromokeyBackgroundImage, setProject, project } = useStore();
 
     useEffect(() => {
         const checkStatus = async() => {
@@ -60,6 +61,16 @@ export default function Settings({ isDarkMode, setIsDarkMode }) {
                         >
                             Главный экран
                         </Link>
+                        {/* <Link
+                            to='/'
+                            onClick={() => setProject({ updateStatus: true })}
+                            className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300"
+                        >
+                            Выбрать проект
+                        </Link> */}
+                        <button onClick={() => {setProject({ ...project, isCurrent: true, updateStatus: true }); console.log(project); navigate('/')}} className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300">
+                             Выбрать проект
+                         </button>
                         <button
                             onClick={toggleTheme}
                             className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200"

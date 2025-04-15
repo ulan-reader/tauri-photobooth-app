@@ -462,7 +462,6 @@ export default function TemplateEditor() {
             // console.log(currentCanvas)
             setCanvasData(canvasArray); // Use the new function to update the canvases
             
-            setProject({ updateStatus: true });
             toast.success('Данные обновлены');
         } catch (error) {
             toast.error('Failed to load all canvas data:', error);
