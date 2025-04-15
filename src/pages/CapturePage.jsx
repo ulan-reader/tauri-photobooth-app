@@ -326,9 +326,9 @@ export default function CaptureScreen({ onCapture }) {
         const canvas = canvasRefLayout.current;
         if (canvas) {
             const ctx = canvas.getContext('2d');
-            drawMyCanvas(ctx, canvas, currentCanvas, true, chromokey.backgroundImage, chromokey.isEnabled, false);
+            drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false);
             const timeoutId = setTimeout(() => {
-                drawMyCanvas(ctx, canvas, currentCanvas, true, chromokey.backgroundImage, chromokey.isEnabled, false);
+                drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false);
               }, 50); // Задержка в 50 миллисекунд (можно варьировать)
               // Очистка таймера, если компонент размонтируется
             const imageData = canvas.toDataURL('image/png');
