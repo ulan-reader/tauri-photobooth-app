@@ -130,6 +130,9 @@ $taskXmlPath = "$env:temp\DailySleepTask.xml"
 </Task>
 "@ | Out-File -Encoding UTF8 -FilePath $taskXmlPath
 
+powercfg /hibernate on
+powercfg /h /type full
+
 # Register task with XML
 Register-ScheduledTask -Xml (Get-Content $taskXmlPath -Raw) -TaskName "DailySleepTask"
 
@@ -239,6 +242,9 @@ $taskXmlPath = "$env:temp\DailyWakeUpTask.xml"
 </Task>
 "@ | Out-File -Encoding UTF8 -FilePath $taskXmlPath
 
+powercfg -setacvalueindex SCHEME_CURRENT SUB_SLEEP RTCWake 1
+powercfg -setdcvalueindex SCHEME_CURRENT SUB_SLEEP RTCWake 1
+powercfg -S SCHEME_CURRENT
 # Register task with XML
 schtasks /Create /TN "DailyWakeUpTask" /TR "powershell.exe -ExecutionPolicy Bypass -File 'C:\Users\ACER\AppData\Roaming\photobox-kazakhstan.app\Test 1\time\wake_script.ps1'" /SC DAILY /ST 18:48 /RL HIGHEST /F
 
