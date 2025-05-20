@@ -43,11 +43,11 @@ export default function TemplatePage({ design, setDesign }) {
         try {
             console.log("init camera")
             
-            if (!camera.isCameraOn) {
-                await invoke('initialize_camera');
-                setCamera({ isCameraOn: true });
-            }
-            navigate('/capture');
+            // if (!camera.isCameraOn) {
+            //     await invoke('initialize_camera');
+            //     setCamera({ isCameraOn: true });
+            // }
+            navigate('/payment');
             setCamera({ isLiveView: true });
             await invoke('start_live_view');
         } catch(error) {
