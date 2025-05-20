@@ -48,6 +48,7 @@ export const useStore = create(devtools((set) => ({
     isCameraOn: false,
     isLiveView: false,
     counterCapturePhoto: 3,
+    payment_enabled: false
   },
 
   setCamera: (updates) => set((state) => ({ camera: { ...state.camera, ...updates } })),
@@ -69,6 +70,7 @@ export const useStore = create(devtools((set) => ({
       imgObject: '',
       src: back_img,
     },
+    printer_visible: false
   },
 
   setChromokey: (updates) => set((state) => ({ chromokey: { ...state.chromokey, ...updates } })),

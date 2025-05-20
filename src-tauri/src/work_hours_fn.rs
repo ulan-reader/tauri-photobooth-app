@@ -1,9 +1,6 @@
-use chrono::{Local, NaiveTime};
-use std::time::Duration;
-use std::thread;
-use std::sync::Arc;
+use chrono::NaiveTime;
 
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::os::windows::process::CommandExt;
 use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
 
@@ -11,7 +8,6 @@ use crate::globals::{WorkHours, PROJECT_PATH};
 use crate::fs_utils::{reading_from_json_file, writing_to_json_file};
 use std::path::PathBuf;
 
-use tauri::api::path::desktop_dir;
 use std::{fs, path::Path, io::Write};
 
 #[tauri::command]
