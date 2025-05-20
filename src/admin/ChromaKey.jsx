@@ -165,7 +165,7 @@ export default function Chromakey() {
 
     const saveChanged = async () => {
         try {
-            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled });
+            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled });
             console.log('Изменения успешно сохраненый');
         } catch (err) {
             console.error('Ошибка сохранения фона:', err);
@@ -177,8 +177,8 @@ export default function Chromakey() {
             const settings = await invoke('read_settings');
 
             if (settings) {
-                setChromokey({ color: settings.color, isEnabled: settings.is_enabled });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo });
+                setChromokey({ color: settings.color, isEnabled: settings.is_enabled, printer_visible: settings.printer_visible });
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: camera.payment_enabled });
             }
             
             const background = await invoke('get_image_path', { path: `settings/chromokey_image`});
@@ -248,6 +248,22 @@ export default function Chromakey() {
                             max={20}
                             value={camera.counterCapturePhoto ?? 3}
                             onChange={(e) => setCamera({ counterCapturePhoto: Number(e.target.value) })}
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                    </div>
+                    <div className='flex gap-4 items-center justify-start flex-row' >
+                        <span className=''>Сделать видным список фотографии</span>
+                        <input
+                            type='checkbox'
+                            checked={chromokey.printer_visible ?? false}
+                            onChange={(e) => setChromokey({ printer_visible: e.target.checked })}
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                    </div>
+                    <div className='flex gap-4 items-center justify-start flex-row' >
+                        <span className=''>Сделать активным способ оплаты</span>
+                        <input
+                            type='checkbox'
+                            checked={camera.payment_enabled ?? false}
+                            onChange={(e) => setCamera({ payment_enabled: e.target.checked })}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
                     </div>
                     <div className="flex justify-between">

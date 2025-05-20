@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePageNavigation } from "../hooks/usePageNavigation";
 import { useNavigate } from "react-router-dom";
+import { invoke } from "@tauri-apps/api"
 import back_img from "../assets/defaultImage.jpeg";
 import { useStore } from "../admin/store";
 import { toast, ToastContainer } from "react-toastify";
@@ -108,6 +109,8 @@ export default function PaymentPage() {
                 await invoke('initialize_camera');
                 setCamera({ isCameraOn: true });
             }
+
+            navigate('/capture');
             setCamera({ isLiveView: true });
             await invoke('start_live_view');
             setIsTimerActive(true);

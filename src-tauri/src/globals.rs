@@ -59,7 +59,9 @@ impl ProjectInfo {
 pub struct ChromokeyInfo {
     pub color: String,
     pub is_enabled: bool,
-    pub counter_capture_photo: u32
+    pub counter_capture_photo: u32,
+    pub printer_visible: bool,
+    pub payment_enabled: bool
 }
 
 

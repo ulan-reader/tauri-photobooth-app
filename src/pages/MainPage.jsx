@@ -173,7 +173,9 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                         <div style={word}><button onClick={() => navigate('/template')} >НАЧАТЬ ФОТОСЕССИЮ</button></div>
                         <canvas ref={canvasRefForSelect} style={{ width: '400px', height: '600px', display: 'none'}} />
                     </div>
-                    <NavLink to="/list"><img className="w-28" src={printer} alt="" /></NavLink>
+                    <div className="w-28">
+                        { chromokey.printer_visible && <NavLink to="/list"><img className="w-28" src={printer} alt="" /></NavLink> }
+                    </div>
                 </div>
                 ) }
             </div>

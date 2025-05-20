@@ -47,7 +47,14 @@ export default function TemplatePage({ design, setDesign }) {
             //     await invoke('initialize_camera');
             //     setCamera({ isCameraOn: true });
             // }
-            navigate('/payment');
+            if (camera.payment_enabled) navigate('/payment');
+            else {
+                if (!camera.isCameraOn) {
+                    await invoke('initialize_camera');
+                    setCamera({ isCameraOn: true });
+                }
+                navigate('/capture')
+            };
             setCamera({ isLiveView: true });
             await invoke('start_live_view');
         } catch(error) {
