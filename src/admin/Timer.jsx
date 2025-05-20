@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import AdminShell from "../components/AdminShell";
+import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
 
 const props = {
     page: 'Время работы фотобудки',
@@ -22,6 +23,33 @@ export default function Timer() {
     const handleWorkHoursChange = (type, value) => {
         setWorkhours( prev => ({ ...prev, [type]: value }));
     }
+    const [form, setForm] = useState({
+        amount: 100.0,
+        item: 1,
+        name_kz: "Атауы",
+        name_ru: "Название",
+      });
+    
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({
+          ...prev,
+          [name]:
+            name === "amount"
+              ? parseFloat(value)
+              : name === "item"
+              ? parseInt(value)
+              : value,
+        }));
+      };
+    
+      const saveToFile = async () => {
+        const path = await invoke("take_item_information_path");
+        const filePath = `${path}/payment-data.json`;
+    
+        await writeTextFile(filePath, JSON.stringify(form, null, 2));
+        alert("Сохранено!");
+      };
 
     useEffect(() => {
         const loadHours = async () => {
@@ -40,6 +68,20 @@ export default function Timer() {
         loadHours();
       }, []);
 
+    useEffect(() => {
+    const loadFromFile = async () => {
+        try {
+        const path = await invoke("take_item_information_path");
+        const filePath = `${path}/payment-data.json`;
+        const json = await readTextFile(filePath);
+        const parsed = JSON.parse(json);
+        setForm(parsed);
+        } catch (err) {
+        console.log("Файл не найден или ошибка чтения, загружается значение по умолчанию.");
+        }
+    };
+    loadFromFile();
+    }, []);
 
     const saveSchedule = async () => {
         try {
@@ -129,6 +171,60 @@ export default function Timer() {
                     <Link to='/settings'>Отмена</Link>
                 </button>
                 <button onClick={saveSchedule}>Сохранить расписание</button>
+            </div>
+            <div className="p-4 space-y-4">
+            <h1 className="text-xl font-bold">Настройки товара</h1>
+            <form className="space-y-2" onSubmit={(e) => e.preventDefault()}>
+                <div>
+                <label className="block">Стоимость:</label>
+                <input
+                    type="number"
+                    name="amount"
+                    step="0.01"
+                    value={form.amount}
+                    onChange={handleChange}
+                    className="border p-1 rounded w-full"
+                />
+                </div>
+                <div>
+                <label className="block">Товар (item_id):</label>
+                <input
+                    type="number"
+                    name="item"
+                    value={form.item}
+                    onChange={handleChange}
+                    className="border p-1 rounded w-full"
+                />
+                </div>
+                <div>
+                <label className="block">Название (каз):</label>
+                <input
+                    type="text"
+                    name="name_kz"
+                    value={form.name_kz}
+                    onChange={handleChange}
+                    className="border p-1 rounded w-full"
+                />
+                </div>
+                <div>
+                <label className="block">Название (рус):</label>
+                <input
+                    type="text"
+                    name="name_ru"
+                    value={form.name_ru}
+                    onChange={handleChange}
+                    className="border p-1 rounded w-full"
+                />
+                </div>
+
+                <button
+                type="button"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+                onClick={saveToFile}
+                >
+                Сохранить
+                </button>
+            </form>
             </div>
             <ToastContainer />
         </AdminShell>

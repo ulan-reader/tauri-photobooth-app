@@ -24,7 +24,7 @@ export default function PaymentFailed() {
     };
 
     const handleCancel = () => {
-        console.log("Payment cancelled.");
+        console.log("Payment canceled.");
         navigate("/");
     };
 

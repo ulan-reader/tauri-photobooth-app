@@ -27,6 +27,9 @@ lazy_static = "1.4"
 printers = "2.0.0"
 chrono = { version = "0.4", features = ["serde"] }
 crc32fast = "1.4.2"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+axum = "0.6"
+hyper = { version = "0.14", features = ["full"] }
 
 rsa = "0.9"
 sha2 = "0.10"

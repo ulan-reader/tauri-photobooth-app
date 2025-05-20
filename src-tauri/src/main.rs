@@ -11,6 +11,7 @@ mod chromokey_fn;
 mod work_hours_fn;
 mod init_project_fn;
 mod license;
+mod payment_fn;
 
 use globals::{LicenseState, PrinterState, PROJECT_PATH, TemplatePaths};
 use init_project_fn::{get_projects, select_project, delete_project, load_project_name};
@@ -19,6 +20,7 @@ use image_fn::{delete_image, get_image_path, save_image, get_image_paths};
 use chromokey_fn::{save_settings, read_settings};
 use work_hours_fn::{get_work_hours, set_work_hours};
 use license::{verify_license, check_license};
+use payment_fn::{start_payment_session, cancel_payment_session, complete_payment_session, get_payment_status, take_options, take_item_information_path};
 
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -55,6 +57,16 @@ type EdsPropertyEvent = c_uint;
 type EdsBaseRef = *mut c_void;
 type EdsVoid = c_void;
 
+use axum::{
+    routing::post,
+    http::StatusCode,
+    response::IntoResponse,
+    Json, Router,
+};
+use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
+use hyper::Server;
+use tauri::async_runtime;
 
 #[link(name = "EDSDK")]
 extern "C" {
@@ -963,9 +975,275 @@ fn end_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Resul
     }
 }
 
+// #[derive(Debug, Clone)]
+// struct ControllerState {
+//     status: String, // idle, session, paid, canceled
+//     last_action: Instant,
+//     amount: Option<f64>,
+//     item: Option<u16>,
+//     name_kz: Option<String>,
+//     name_ru: Option<String>,
+// }
+
+// impl ControllerState {
+//     fn new() -> Self {
+//         ControllerState {
+//             status: "idle".to_string(),
+//             last_action: Instant::now(),
+//             amount: None,
+//             item: None,
+//             name_kz: None,
+//             name_ru: None,
+//         }
+//     }
+
+//     fn reset(&mut self) {
+//         *self = Self::new();
+//     }
+// }
+
+// #[derive(Deserialize)]
+// struct HttpPayRequest {
+//     act: String,
+//     #[serde(default)]
+//     amount: Option<f64>,
+//     #[serde(default)]
+//     item: Option<u16>,
+//     #[serde(default)]
+//     name_kz: Option<String>,
+//     #[serde(default)]
+//     name_ru: Option<String>,
+//     #[serde(default)]
+//     info: Option<Vec<InfoItem>>,
+// }
+
+// #[derive(Deserialize)]
+// struct InfoItem {
+//     code: u32,
+//     description: String,
+// }
+
+// #[derive(Serialize)]
+// struct HttpPayResponse {
+//     error: String,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     status: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     guid: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     custom: Option<String>,
+// }
+
+// async fn handle_request(
+//     req: Request<Body>,
+//     state: Arc<Mutex<ControllerState>>,
+// ) -> Result<Response<Body>, hyper::Error> {
+//     if req.method() != hyper::Method::POST || req.uri().path() != "/httppay" {
+//         return Ok(Response::builder()
+//             .status(StatusCode::NOT_FOUND)
+//             .body(Body::from(json!({ "error": "unknown" }).to_string()))
+//             .unwrap());
+//     }
+
+//     let headers = req.headers();
+//     if headers.get("Content-Type") != Some(&"application/json".parse().unwrap()) {
+//         return Ok(Response::builder()
+//             .status(StatusCode::BAD_REQUEST)
+//             .body(Body::from(json!({ "error": "bad_args" }).to_string()))
+//             .unwrap());
+//     }
+
+//     let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
+//     let request: HttpPayRequest = match serde_json::from_slice(&body_bytes) {
+//         Ok(req) => req,
+//         Err(_) => {
+//             return Ok(Response::builder()
+//                 .status(StatusCode::BAD_REQUEST)
+//                 .body(Body::from(json!({ "error": "bad_args" }).to_string()))
+//                 .unwrap());
+//         }
+//     };
+
+//     let mut state = state.lock().unwrap();
+
+//     if state.status == "session" && state.last_action.elapsed().as_secs() >= 120 {
+//         state.status = "canceled".to_string();
+//         state.last_action = Instant::now();
+//     } else if state.status == "paid" && state.last_action.elapsed().as_secs() >= 120 {
+//         state.status = "idle".to_string();
+//         state.reset();
+//     }
+
+//     let response = match request.act.as_str() {
+//         "status" => {
+//             json!({
+//                 "error": "ok",
+//                 "status": state.status
+//             })
+//         }
+//         "request" => {
+//             if state.status != "idle" {
+//                 json!({ "error": "collision" })
+//             } else if let (Some(amount), Some(item)) = (request.amount, request.item) {
+//                 if amount < 0.01 || amount > 9999.99 || item > 65535
+//                     || request.name_kz.as_ref().map_or(false, |s| s.len() > 31)
+//                     || request.name_ru.as_ref().map_or(false, |s| s.len() > 31)
+//                 {
+//                     json!({ "error": "bad_values" })
+//                 } else {
+//                     state.status = "session".to_string();
+//                     state.amount = Some(amount);
+//                     state.item = Some(item);
+//                     state.name_kz = request.name_kz;
+//                     state.name_ru = request.name_ru;
+//                     state.last_action = Instant::now();
+//                     json!({ "error": "ok" })
+//                 }
+//             } else {
+//                 json!({ "error": "bad_args" })
+//             }
+//         }
+//         "complete" => {
+//             if state.status == "session" || state.status == "paid" || state.status == "canceled" {
+//                 state.status = "idle".to_string();
+//                 state.reset();
+//                 json!({ "error": "ok" })
+//             } else {
+//                 json!({ "error": "collision" })
+//             }
+//         }
+//         "cancel" => {
+//             if state.status == "session" || state.status == "paid" {
+//                 state.status = "canceled".to_string();
+//                 state.last_action = Instant::now();
+//                 json!({ "error": "ok" })
+//             } else {
+//                 json!({ "error": "collision" })
+//             }
+//         }
+//         "info" => {
+//             if let Some(info) = request.info {
+//                 if info.iter().any(|i| i.description.len() > 63) {
+//                     json!({ "error": "bad_values" })
+//                 } else {
+//                     json!({ "error": "ok" })
+//                 }
+//             } else {
+//                 json!({ "error": "bad_args" })
+//             }
+//         }
+//         "option" => {
+//             json!({
+//                 "error": "ok",
+//                 "guid": "123e4567-e89b-12d3-a456-426614174000",
+//                 "custom": "Photobooth Controller"
+//             })
+//         }
+//         _ => json!({ "error": "unknown_act" }),
+//     };
+
+//     Ok(Response::builder()
+//         .status(StatusCode::OK)
+//         .header("Content-Type", "application/json")
+//         .body(Body::from(response.to_string()))
+//         .unwrap())
+// }
+
+// async fn start_server(state: Arc<Mutex<ControllerState>>) -> Result<(), std::io::Error> {
+//     let addr = ([127, 0, 0, 1], 8080).into();
+//     let service = service_fn(move |req| handle_request(req, state.clone()));
+//     let server = Server::try_bind(&addr)?.serve(Shared::new(service));
+//     println!("Fake HTTPPay server running on http://{}", addr);
+//     server.await?;
+//     Ok(())
+// }
+struct ControllerState {
+    status: String, // idle, session, paid, canceled
+    last_action: Instant,
+    amount: Option<f64>,
+    item: Option<u16>,
+    name_kz: Option<String>,
+    name_ru: Option<String>,
+}
+
+impl ControllerState {
+    fn new() -> Self {
+        ControllerState {
+            status: "idle".to_string(),
+            last_action: Instant::now(),
+            amount: None,
+            item: None,
+            name_kz: None,
+            name_ru: None,
+        }
+    }
+
+    fn reset(&mut self) {
+        *self = Self::new();
+    }
+}
+    #[derive(Deserialize, Debug)]
+    struct HttpPayRequest {
+        act: String,
+    }
+
+    #[derive(Serialize)]
+    struct HttpPayResponse<'a> {
+        error: &'a str,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        status: Option<&'a str>,
+    }
+
+async fn handle_post(Json(payload): Json<HttpPayRequest>) -> impl IntoResponse {
+    println!("Получен запрос от контроллера: {:?}", payload);
+
+    match payload.act.as_str() {
+        "status" => {
+            Json(HttpPayResponse {
+                error: "ok",
+                status: Some("idle"),
+            })
+        }
+        "request" => {
+            Json(HttpPayResponse {
+                error: "ok",
+                status: None,
+            })
+        }
+        "complete" | "cancel" => {
+            Json(HttpPayResponse {
+                error: "ok",
+                status: None,
+            })
+        }
+        _ => Json(HttpPayResponse {
+            error: "unknown_act",
+            status: None,
+        }),
+    }
+}
+
+async fn start_server<ControllerState>(state: Arc<Mutex<ControllerState>>) -> Result<(), hyper::Error> {
+    let app = Router::new().route("/httppay", post(handle_post));
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 80)); // или 8080, если порт 80 занят
+    println!("Сервер ловушка запущен на http://{}", addr);
+    Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // Создаем элементы меню
+    let controller_state = Arc::new(Mutex::new(ControllerState::new()));
+
+    // Запускаем фейковый сервер
+    async_runtime::spawn(start_server(controller_state.clone()));
+
     let main_page = CustomMenuItem::new("main_page".to_string(), "Главная");
     let setting_page = CustomMenuItem::new("setting_page".to_string(), "Настройки");
     let hide_menu = CustomMenuItem::new("hide_menu".to_string(), "Скрыть меню");
@@ -1018,7 +1296,17 @@ async fn main() {
                 // let handle_clone = handle.clone();
                 let window = handle.get_window("main").unwrap();
                 let menu_visible = menu_visible.clone();
-                // Обработчик событий клавиатуры
+                // // Обработчик событий клавиатуры  
+                // tokio::spawn(async {
+                //     let app = Router::new().route("/httppay", post(handle_post));
+                //     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+                //     println!("Fake HTTPPay сервер запущен на http://{}", addr);
+                
+                //     if let Err(e) = hyper::Server::bind(&addr).serve(app.into_make_service()).await {
+                //         eprintln!("Ошибка сервера: {}", e);
+                //     }
+                // });
+
                 thread::spawn(move || {
                     let mut last_check = Instant::now();
                     loop {
@@ -1077,7 +1365,13 @@ async fn main() {
             save_canvas_template,
             get_saved_canvas_template_paths,
             load_canvas_template, 
-            save_part_templates
+            save_part_templates,
+            start_payment_session,
+            cancel_payment_session,
+            complete_payment_session,
+            get_payment_status,
+            take_options,
+            take_item_information_path
             ])
         .manage(Arc::new(Mutex::new(None::<Arc<Mutex<Camera>>>)))
         .manage(PrinterState::default())
