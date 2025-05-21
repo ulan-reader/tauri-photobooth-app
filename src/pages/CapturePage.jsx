@@ -455,8 +455,8 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
-                                                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-                                            </button>
+                                                    <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                                </button>
                                             )}
                                         </div>
                                     </div>

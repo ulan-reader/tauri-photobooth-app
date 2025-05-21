@@ -498,14 +498,35 @@ export default function TemplateEditor() {
 
     const saveAllData = async (currentCanvas, canvasId, canvasRefForSelect) => {
         try {
-            currentCanvas.objects.map((obj) => {
-                if (obj.type === 'image') obj.imgObject = '';
+            canvases.forEach(async canvas => {
+                const canvasSel = canvasRefForSelect.current;
+                const ctxSel = canvasSel.getContext('2d');
+                canvas.objects.map((obj) => {
+                    if (obj.type === 'image') obj.imgObject = '';
+                });
+                const saved = setInterval(() => {
+                    drawMyCanvas(ctxSel, canvasSel, canvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
+                    drawMyCanvas(ctxSel, canvasSel, canvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
+                    saveCanvasImage(canvas.id, canvas, canvasRefForSelect)
+                        .then(() => {
+                            console.log(canvas.id, canvas.canvasProps.webpData);
+                            saveCanvasData(canvas.id, canvas);
+                        });
+                    
+                }, 2000);
+
+                setTimeout(() => {
+                    clearInterval(saved);
+                }, 6500);
             });
-            // const image = await invoke('get_image_path', { path: `template/${currentCanvas.canvasProps.available ? `available` : `not_available`}/canvas_${currentCanvas.id}` });
-            // currentCanvas.canvasProps.webpData = `url(${convertFileSrc(image)})`;
-            await saveCanvasImage(canvasId, currentCanvas, canvasRefForSelect);
-            console.log(canvasId, currentCanvas.canvasProps.webpData);
-            saveCanvasData(canvasId, currentCanvas);
+            // currentCanvas.objects.map((obj) => {
+            //     if (obj.type === 'image') obj.imgObject = '';
+            // });
+            // // const image = await invoke('get_image_path', { path: `template/${currentCanvas.canvasProps.available ? `available` : `not_available`}/canvas_${currentCanvas.id}` });
+            // // currentCanvas.canvasProps.webpData = `url(${convertFileSrc(image)})`;
+            // await saveCanvasImage(canvasId, currentCanvas, canvasRefForSelect);
+            // console.log(canvasId, currentCanvas.canvasProps.webpData);
+            // saveCanvasData(canvasId, currentCanvas);
             toast.success('Данные сохранены');
         } catch (error) {
             console.log(error);
@@ -621,9 +642,9 @@ export default function TemplateEditor() {
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium">Выберите шаблон</label>
                                     <div className="grid grid-cols-2 gap-3 overflow-auto max-h-80">
-                                        {canvasTemplate.length === 0 ? (
+                                        {canvasTemplate?.length === 0 || canvasTemplate === null ? (
                                             <div className="col-span-2 text-gray-400 text-center py-6">
-                                                Нет доступных шаблонов
+                                                Нет доступных шаблонов, сначала добавьте шаблон
                                             </div>
                                         ) : (
                                             canvasTemplate.map((template, index) => (

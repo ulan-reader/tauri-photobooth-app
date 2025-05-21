@@ -71,6 +71,7 @@ export default function PaymentPage() {
     const isStartedRef = useRef(false);
 
     useEffect(() => {
+        // navigate('/capture');
         if (!isStartedRef.current) {
             isStartedRef.current = true;
             start();
@@ -252,7 +253,10 @@ export default function PaymentPage() {
     }, [timer]);
 
     useEffect(() => {
-        if (isPaymentSuccessful) navigate('/capture');
+        if (isPaymentSuccessful) {
+            if (!camera.isCameraOn) invoke('initialize_camera').then(() => setCamera({ isCameraOn: true }));
+            navigate('/capture')
+        }
         else if (isPaymentFailed) navigate('/payment-failed');
     }, [isPaymentSuccessful, isPaymentFailed]);
 

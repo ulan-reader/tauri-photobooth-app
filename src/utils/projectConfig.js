@@ -28,11 +28,11 @@ export async function getSavedPrinter(setLoading) {
 export async function updateSettings(setChromokey, setCamera, backgroundUrl) {
     try {
         const settings = await invoke('read_settings');
-        setChromokey({ color: settings.color, isEnabled: settings.is_enabled });
-        setCamera({ counterCapturePhoto: settings.counter_capture_photo });
+        setChromokey({ color: settings.color, isEnabled: settings.is_enabled, printer_visible: settings.printer_visible });
+        setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
     } catch (err) {
-        setChromokey({ color: '#00ff00', isEnabled: false });
-        setCamera({ counterCapturePhoto: Number(3) });
+        setChromokey({ color: '#00ff00', isEnabled: false, printer_visible: false });
+        setCamera({ counterCapturePhoto: Number(3), payment_enabled: false });
         await invoke('save_settings', { color: '#00ff00', counter: Number(3), status: false });
         console.error('Ошибка загрузки настроек хромокея:', err);
     }
