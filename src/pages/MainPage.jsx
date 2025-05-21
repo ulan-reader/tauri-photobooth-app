@@ -1,7 +1,7 @@
 import { Link, NavLink, resolvePath, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from 'react';
 import '../App.css';
-import main_icon from '../assets/main_icon.png';
+import main_icon from '../assets/main_camera_icon.png';
 import back_img from '../assets/defaultImage.jpeg';
 import { toast,ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
@@ -169,8 +169,8 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                         <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-0 hover:opacity-100">
                             <Settings size={30} /> {/* Отображаем иконку шестеренки */}
                         </NavLink>
-                        <NavLink to='/template'><img src={main_icon} alt="camera icon" /></NavLink>
-                        <div style={word}><button onClick={() => navigate('/template')} >НАЧАТЬ ФОТОСЕССИЮ</button></div>
+                        <NavLink to='/template'><img src={main_icon} alt="camera icon"  /></NavLink>
+                        {/* <div style={word}><button onClick={() => navigate('/template')} >НАЧАТЬ ФОТОСЕССИЮ</button></div> */}
                         <canvas ref={canvasRefForSelect} style={{ width: '400px', height: '600px', display: 'none'}} />
                     </div>
                     <div className="w-28">

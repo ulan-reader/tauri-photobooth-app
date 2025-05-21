@@ -7,7 +7,6 @@ import { useStore } from "../admin/store";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
-import { invoke } from '@tauri-apps/api/tauri';
 import kaspi_img from '../assets/kaspi_1.jpg';
 
 const DEVICE_IP = '192.168.1.2';

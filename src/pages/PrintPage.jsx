@@ -127,11 +127,11 @@ export default function PrintPage({ images, design, setDesign }) {
                 <Settings size={30} /> {/* Отображаем иконку шестеренки */}
             </NavLink>
             <div className='flex flex-col gap-3'>
-              <button className='h-9 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+              {/* <button className='h-9 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }}>
                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-              </button>
-              <div className='flex justify-end items-center'>
-                <div className='w-32'></div>
+              </button> */}
+              <div className='grid grid-cols-3 items-center'>
+                <div className='w-28'></div>
                 <div className='relative items-center box_print'>
                   <div className='bg_print' ></div>
                   <div>
@@ -140,19 +140,19 @@ export default function PrintPage({ images, design, setDesign }) {
                         ref={canvasRef}
                         width={currentCanvas.canvasProps.width}
                         height={currentCanvas.canvasProps.height}
-                        style={{ maxWidth: '300px', maxHeight: '450px', display: 'block'}}
+                        style={{ maxWidth: '380px', maxHeight: '570px', display: 'block'}}
                       ></canvas>
                     </div>
                   </div>
                 </div>
-                <button className='h-9 flex justify-center items-center' onClick={handlePrint}><img src={printer} alt="" /></button>
+                <button className='h-4 flex justify-center items-center rounded-lg' onClick={handlePrint}><img className='rounded-lg w-36 ml-28' src={printer} alt="" /></button>
               </div>
             </div>
-            <div className=' flex justify-start items-center w-full'>
-              <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={backPage}>
+            {/* <div className=' flex justify-start items-center w-full'>
+              <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={backPage}>
                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -83,7 +83,7 @@ export default function TemplatePage({ design, setDesign }) {
                 <div className='back-img'></div>
                 <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
                     <div className='w-full flex flex-col gap-9 justify-center items-center'>
-                        <b className='text-5xl'>ВЫБЕРИТЕ ШАБЛОН</b>
+                        <b className='text-6xl stroke'>ВЫБЕРИТЕ ШАБЛОН</b>
                         <div className='flex flex-col w-full px-20 gap-16'>
                             <div className='flex items-center justify-center'>
                                 <img
@@ -135,7 +135,7 @@ export default function TemplatePage({ design, setDesign }) {
                                 />
                             </div>
                             <div className='flex justify-between items-center'>
-                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={() => navigate('/')}>
+                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={() => navigate('/')}>
                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                 </button>
                                 <button
@@ -150,7 +150,7 @@ export default function TemplatePage({ design, setDesign }) {
                                 >
                                     <p className='w-44 text-black text-2xl font-medium'>ЧЕРНО-БЕЛОЕ ФОТО</p>
                                 </button>
-                                <button className='w-36 h-20 cursor-pointer flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white text-2xl bg-red-700' onClick={handleNext}>
+                                <button className='w-36 h-20 cursor-pointer flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white text-2xl bg-blue-900' onClick={handleNext}>
                                     ДАЛЕЕ <img className='w-5' src={templateTriangle} alt="Forward" />
                                 </button>
                             </div>

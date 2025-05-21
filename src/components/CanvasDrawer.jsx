@@ -179,7 +179,18 @@ export const drawCromakeyBackgroundImage = (ctx, obj, chromokeyBackgroundImage, 
 
 };
 
-
+const styles = {
+    1: { color: 'red', number: 1 },
+    2: { color: 'blue', number: 2 },
+    3: { color: 'green', number: 3 },
+    4: { color: 'yellow', number: 4 },
+    5: { color: 'orange', number: 5 },
+    6: { color: 'purple', number: 6 },
+    7: { color: 'cyan', number: 7 },
+    8: { color: 'magenta', number: 8 },
+    9: { color: 'lime', number: 9 },
+    10: { color: 'black', number: 10 },
+};
 
 // Функция для рисования изображения в режиме выбора
 export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, backImage, design) => {
@@ -194,11 +205,10 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
 
     // Отрисовка изображения после загрузки
     if (bool == true) {
-        if (obj.numberImage === 1 || obj.numberImage === 2 || obj.numberImage === 3) {
+        if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(obj.numberImage)) {
             setShadow(ctx, obj);
-            if (obj.numberImage === 1) drawSquare(ctx, obj, 'red', 1);
-            if (obj.numberImage === 2) drawSquare(ctx, obj, 'blue', 2);
-            if (obj.numberImage === 3) drawSquare(ctx, obj, 'green', 3);
+            const style = styles[obj.numberImage];
+            if (style) drawSquare(ctx, obj, style.color, style.number) 
             // ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
             offShadow(ctx);
             if (obj.strokeWidth) setStroke(ctx, obj);
@@ -223,7 +233,7 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
             }
         }
     } else {
-        if (obj.numberImage === 1 || obj.numberImage === 2 || obj.numberImage === 3) {
+        if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(obj.numberImage)) {
             if (design) ctx.filter = 'grayscale(1)'
             else ctx.filter = 'grayscale(0)'
             obj.imgObject.onload = () => {

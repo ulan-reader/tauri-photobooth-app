@@ -358,7 +358,7 @@ export default function CaptureScreen({ onCapture }) {
                     <div className='flex w-screen justify-center items-center'>
                         <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px' }} className='absolute top-64 left-7'/>
                         <div className='flex flex-col gap-6 items-center px-20 w-full absolute'>
-                            <div className='text-5xl items-center text-center -top-5'>
+                            <div className='text-5xl items-center text-center -top-5 stroke'>
                                 ЧТОБЫ СОЗДАТЬ ФОТО, <br /> НАЖМИТЕ НА КНОПКУ ПОД РАМКОЙ
                             </div>
                             <div className='w-full'>
@@ -393,7 +393,7 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700'  onClick={handleBack} disabled={isButtonDisabled}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900'  onClick={handleBack} disabled={isButtonDisabled}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                             <div className='flex justify-center items-center'>
@@ -403,7 +403,7 @@ export default function CaptureScreen({ onCapture }) {
                                                     </button>
                                                 )}
                                             </div>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
@@ -414,7 +414,7 @@ export default function CaptureScreen({ onCapture }) {
                                         <canvas ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
                                         <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2 }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                             <div className='flex justify-around items-center gap-20'>
@@ -425,7 +425,7 @@ export default function CaptureScreen({ onCapture }) {
                                                     <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
                                                 </button>
                                             </div>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
