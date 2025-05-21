@@ -166,7 +166,7 @@ export default function Chromakey() {
     const saveChanged = async () => {
         try {
             await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled });
-            console.log('Изменения успешно сохраненый');
+            console.log('Изменения успешно сохранены');
         } catch (err) {
             console.error('Ошибка сохранения фона:', err);
         }
@@ -178,7 +178,7 @@ export default function Chromakey() {
 
             if (settings) {
                 setChromokey({ color: settings.color, isEnabled: settings.is_enabled, printer_visible: settings.printer_visible });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: camera.payment_enabled });
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
             }
             
             const background = await invoke('get_image_path', { path: `settings/chromokey_image`});

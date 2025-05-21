@@ -435,7 +435,7 @@ export default function CaptureScreen({ onCapture }) {
                                                 </button>
                                             )}
                                             {camera.payment_enabled ? (
-                                                <div className='flex justify-around items-center gap-20'>
+                                                <div className='flex-1 flex justify-around items-center gap-20'>
                                                     <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
                                                         <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
                                                     </button>

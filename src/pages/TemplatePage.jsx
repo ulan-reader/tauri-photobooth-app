@@ -58,7 +58,7 @@ export default function TemplatePage({ design, setDesign }) {
             setCamera({ isLiveView: true });
             await invoke('start_live_view');
         } catch(error) {
-            toast.error("Камера не подключена");
+            // toast.error("Камера не подключена");
             console.log("Error: ", error);
             return
         }
