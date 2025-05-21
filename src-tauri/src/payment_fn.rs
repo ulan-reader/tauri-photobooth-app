@@ -3,6 +3,7 @@ use tauri::Manager;
 use crate::globals::PROJECT_PATH;
 use std::path::PathBuf;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, CONTENT_LENGTH};
+use tauri::command;
 
 const FAKE_SERVER_URL: &str = "http://192.168.1.2:80/httppay";
 
@@ -34,9 +35,48 @@ pub struct StartSessionPayload {
     pub name_ru: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct PaymentResponse {
+    result: String,
+}
+
+
+#[derive(Serialize)]
+struct OptionRequest {
+    act: &'static str,
+}
+
+#[derive(Debug, Deserialize)]
+struct OptionResponse {
+    #[serde(default)]  // Позволяет пропустить поле
+    guid: Option<String>,  // Теперь optional
+    #[serde(default)]
+    custom: Option<String>,
+}
+
 #[tauri::command]
-pub async fn start_payment_session(payload: StartSessionPayload) -> Result<(), String> {
-    let client = reqwest::Client::new();
+pub async fn start_payment_session(payload: StartSessionPayload) -> Result<String, String> {
+    
+    // Валидация данных
+    if payload.amount < 0.01 || payload.amount > 9999.99 {
+        println!("Неверная сумма: {}", payload.amount);
+        return Err("Некорректная сумма".into());
+    }
+    
+    if payload.name_kz.len() > 31 || payload.name_ru.len() > 31 {
+        println!("Слишком длинное название");
+        return Err("Название слишком длинное".into());
+    }
+
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10)) // Таймаут 10 секунд
+        .build() {
+            Ok(c) => c,
+            Err(e) => {
+                println!("Ошибка создания клиента: {}", e);
+                return Err("Внутренняя ошибка сервера".into());
+            }
+        };
 
     let body = RequestPayload {
         act: "request",
@@ -46,25 +86,58 @@ pub async fn start_payment_session(payload: StartSessionPayload) -> Result<(), S
         name_ru: &payload.name_ru,
     };
 
-    let json_body = serde_json::to_string(&body)
-        .map_err(|e| format!("Ошибка сериализации: {}", e))?;
+    let json_body = match serde_json::to_string(&body) {
+        Ok(j) => j,
+        Err(e) => {
+            println!("Ошибка сериализации: {}", e);
+            return Err("Ошибка формирования запроса".into());
+        }
+    };
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(CONTENT_LENGTH, HeaderValue::from_str(&json_body.len().to_string()).unwrap());
-    println!("Start session response",);
 
-    let res = client
+    let res = match client
         .post(FAKE_SERVER_URL)
         .headers(headers)
         .body(json_body)
         .send()
-        .await
-        .map_err(|e| format!("Request error: {}", e))?;
+        .await {
+            Ok(r) => r,
+            Err(e) => {
+                println!("Ошибка отправки запроса: {}", e);
+                return Err("Ошибка соединения".into());
+            }
+        };
 
-    let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
-    println!("Start session response: {}", text);
-    Ok(())
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
+        
+    println!("Получен ответ, статус: {}", res.status());
+
+    let response_text = match res.text().await {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Ошибка чтения ответа: {}", e);
+            return Err("Ошибка чтения ответа сервера".into());
+        }
+    };
+
+    println!("Текст ответа: {}", response_text);
+
+    match response_text.as_str() {
+        "ok" => Ok("ok".into()),
+        "failure" => Ok("failure".into()),
+        "collision" => Ok("collision".into()),
+        "bad_args" => Ok("bad_args".into()),
+        "bad_values" => Ok("bad_values".into()),
+        _ => {
+            println!("Неизвестный ответ: {}", response_text);
+            Err("Неизвестный ответ сервера".into())
+        }
+    }
 }
 
 #[tauri::command]
@@ -87,6 +160,10 @@ pub async fn cancel_payment_session() -> Result<(), String> {
         .await
         .map_err(|e| format!("Cancel error: {}", e))?;
 
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
+    
     let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
     println!("Cancel response: {}", text);
 
@@ -113,6 +190,10 @@ pub async fn complete_payment_session() -> Result<(), String> {
         .await
         .map_err(|e| format!("Complete error: {}", e))?;
 
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
+        
     let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
     println!("Complete response: {}", text);
 
@@ -139,34 +220,59 @@ pub async fn get_payment_status() -> Result<String, String> {
         .await
         .map_err(|e| format!("Status error: {}", e))?;
 
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
+    
     let data: HttpPayStatus = res.json().await.map_err(|e| format!("Invalid JSON: {}", e))?;
-
+    // println!("{}", data);
     Ok(data.status.unwrap_or("unknown".into()))
 }
 
 #[tauri::command]
-pub async fn take_options() -> Result<String, String> {
+pub async fn get_device_options(ip: String) -> Result<(String, String), String> {
     let client = reqwest::Client::new();
 
-    let request_body = HttpPayRequest { act: "option" };
+    // Подготавливаем запрос
+    let request_body = OptionRequest { act: "option" };
     let json_body = serde_json::to_string(&request_body)
         .map_err(|e| format!("Ошибка сериализации: {}", e))?;
 
+    // Настраиваем заголовки
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(CONTENT_LENGTH, HeaderValue::from_str(&json_body.len().to_string()).unwrap());
 
+    // Формируем URL
+    let url = format!("http://{}/httppay", ip);
+    println!("Trying to take options!");
+
+    // Отправляем запрос
     let res = client
-        .post(FAKE_SERVER_URL)
+        .post(&url)
         .headers(headers)
         .body(json_body)
         .send()
         .await
-        .map_err(|e| format!("Ошибка отправки запроса: {}", e))?;
+        .map_err(|e| format!("Ошибка запроса: {}", e))?;
 
-    let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
-    println!("{}", text);
-    Ok(text)
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
+
+    let raw_response = res.text()
+        .await
+        .map_err(|e| format!("Ошибка чтения ответа: {}", e))?;
+
+    println!("Raw server response: {}", raw_response);
+    // Обрабатываем ответ
+    let data: OptionResponse = serde_json::from_str(&raw_response)
+        .map_err(|e| format!("Ошибка парсинга JSON: {}", e))?;
+
+    let guid = data.guid.unwrap_or_else(|| "default_guid".to_string());
+    let custom = data.custom.unwrap_or_else(|| "default_custom".to_string());
+
+    Ok((guid, custom))
 }
 
 #[tauri::command]
@@ -200,6 +306,10 @@ async fn send_simple_act(needed_act: &'static str) -> Result<(), String> {
         .send()
         .await
         .map_err(|e| format!("{} error: {}", needed_act, e))?;
+
+    if !res.status().is_success() {
+        return Err(format!("HTTP ошибка: {}", res.status()));
+    }
 
     let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
     println!("{} response: {}", needed_act, text);

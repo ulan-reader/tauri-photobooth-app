@@ -20,7 +20,7 @@ use image_fn::{delete_image, get_image_path, save_image, get_image_paths};
 use chromokey_fn::{save_settings, read_settings};
 use work_hours_fn::{get_work_hours, set_work_hours};
 use license::{verify_license, check_license};
-use payment_fn::{start_payment_session, cancel_payment_session, complete_payment_session, get_payment_status, take_options, take_item_information_path};
+use payment_fn::{start_payment_session, cancel_payment_session, complete_payment_session, get_payment_status, get_device_options, take_item_information_path};
 
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -1370,7 +1370,7 @@ async fn main() {
             cancel_payment_session,
             complete_payment_session,
             get_payment_status,
-            take_options,
+            get_device_options,
             take_item_information_path
             ])
         .manage(Arc::new(Mutex::new(None::<Arc<Mutex<Camera>>>)))

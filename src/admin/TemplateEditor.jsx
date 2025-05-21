@@ -621,23 +621,29 @@ export default function TemplateEditor() {
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium">Выберите шаблон</label>
                                     <div className="grid grid-cols-2 gap-3 overflow-auto max-h-80">
-                                        {canvasTemplate.map((template, index) => (
-                                        <div
-                                            key={index}
-                                            className={`border-2 rounded cursor-pointer transition-all p-2 ${
-                                            selectedTemplate === template.image
-                                                ? "border-blue-500"
-                                                : "border-transparent"
-                                            }`}
-                                            onClick={() => setSelectedTemplate(template.image)}
-                                        >
-                                            <img
-                                                src={template.image}
-                                                alt={`template-${index}`}
-                                                className="w-full h-24 object-contain rounded"
-                                            />
-                                        </div>
-                                        ))}
+                                        {canvasTemplate.length === 0 ? (
+                                            <div className="col-span-2 text-gray-400 text-center py-6">
+                                                Нет доступных шаблонов
+                                            </div>
+                                        ) : (
+                                            canvasTemplate.map((template, index) => (
+                                            <div
+                                                key={index}
+                                                className={`border-2 rounded cursor-pointer transition-all p-2 ${
+                                                selectedTemplate === template.image
+                                                    ? "border-blue-500"
+                                                    : "border-transparent"
+                                                }`}
+                                                onClick={() => setSelectedTemplate(template.image)}
+                                            >
+                                                <img
+                                                    src={template.image}
+                                                    alt={`template-${index}`}
+                                                    className="w-full h-24 object-contain rounded"
+                                                />
+                                            </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                         
