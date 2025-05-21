@@ -8,6 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import AdminShell from "../components/AdminShell";
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
+import { useStore } from "../admin/store";
 
 const props = {
     page: 'Время работы фотобудки',
@@ -23,6 +24,11 @@ export default function Timer() {
     const handleWorkHoursChange = (type, value) => {
         setWorkhours( prev => ({ ...prev, [type]: value }));
     }
+    const {
+        setQRImage,
+        project, 
+        setProject
+    } = useStore();
     const [form, setForm] = useState({
         amount: 100.0,
         item: 1,
@@ -107,6 +113,30 @@ export default function Timer() {
           is_always_active: !prevState.is_always_active, // Меняем только поле is_always_active
         }));
     };
+    const handleQRChange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+    
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const imageSrc = e.target.result;
+                const imageObject = new Image();
+                imageObject.src = imageSrc;
+                // Обновляем состояние с новым изображением
+                try {
+                    await invoke('save_image', {
+                        image: imageSrc,
+                        relativePath: "settings/qr_image",
+                    })
+                } catch (err) {
+                    console.error("Ошибка сохранения изображения: ", err);
+                }
+            };
+            reader.readAsDataURL(file);
+            const image = await invoke('get_image_path', { path: `settings/qr_image` });
+            const url_image = `url(${convertFileSrc(image)})`;
+            setQRImage(`${project.name}_settings/qr_image`, "settings/qr_image", url_image);
+        };
 
     return (
         <AdminShell props={props}>
@@ -172,60 +202,94 @@ export default function Timer() {
                 </button>
                 <button onClick={saveSchedule}>Сохранить расписание</button>
             </div>
-            <div className="p-4 space-y-4">
-            <h1 className="text-xl font-bold">Настройки товара</h1>
-            <form className="space-y-2" onSubmit={(e) => e.preventDefault()}>
-                <div>
-                <label className="block">Стоимость:</label>
-                <input
-                    type="number"
-                    name="amount"
-                    step="0.01"
-                    value={form.amount}
-                    onChange={handleChange}
-                    className="border p-1 rounded w-full"
-                />
-                </div>
-                <div>
-                <label className="block">Товар (item_id):</label>
-                <input
-                    type="number"
-                    name="item"
-                    value={form.item}
-                    onChange={handleChange}
-                    className="border p-1 rounded w-full"
-                />
-                </div>
-                <div>
-                <label className="block">Название (каз):</label>
-                <input
-                    type="text"
-                    name="name_kz"
-                    value={form.name_kz}
-                    onChange={handleChange}
-                    className="border p-1 rounded w-full"
-                />
-                </div>
-                <div>
-                <label className="block">Название (рус):</label>
-                <input
-                    type="text"
-                    name="name_ru"
-                    value={form.name_ru}
-                    onChange={handleChange}
-                    className="border p-1 rounded w-full"
-                />
-                </div>
+            <div className="p-4">
+                <h1 className="text-xl font-bold mb-4">Настройки товара</h1>
 
-                <button
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-                onClick={saveToFile}
-                >
-                Сохранить
-                </button>
-            </form>
-            </div>
+                <div className="flex gap-8">
+                    {/* Левая колонка — форма */}
+                    <form
+                    className="flex flex-col gap-4 w-1/2"
+                    onSubmit={(e) => e.preventDefault()}
+                    >
+                    <div>
+                        <label className="block mb-1">Стоимость:</label>
+                        <input
+                        type="number"
+                        name="amount"
+                        step="0.01"
+                        value={form.amount}
+                        onChange={handleChange}
+                        className="border p-1 rounded w-full"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-1">Товар (item_id):</label>
+                        <input
+                        type="number"
+                        name="item"
+                        value={form.item}
+                        onChange={handleChange}
+                        className="border p-1 rounded w-full"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-1">Название (каз):</label>
+                        <input
+                        type="text"
+                        name="name_kz"
+                        value={form.name_kz}
+                        onChange={handleChange}
+                        className="border p-1 rounded w-full"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-1">Название (рус):</label>
+                        <input
+                        type="text"
+                        name="name_ru"
+                        value={form.name_ru}
+                        onChange={handleChange}
+                        className="border p-1 rounded w-full"
+                        />
+                    </div>
+
+                    <button
+                        type="button"
+                        className="bg-blue-600 text-white px-4 py-2 rounded w-fit"
+                        onClick={saveToFile}
+                    >
+                        Сохранить
+                    </button>
+                    </form>
+
+                    {/* Правая колонка — выбор QR */}
+                    <div className="flex items-center justify-center w-1/2">
+                    <label
+                        style={{
+                        width: '300px',
+                        height: '300px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        border: '2px dashed gray',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        }}
+                    >
+                        <p>Кликните для выбора QR оплаты</p>
+                        <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleQRChange}
+                        className="hidden"
+                        />
+                    </label>
+                    </div>
+                </div>
+                </div>
             <ToastContainer />
         </AdminShell>
     )

@@ -398,13 +398,24 @@ export default function CaptureScreen({ onCapture }) {
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
-                                            <div className='flex justify-center items-center'>
-                                                {!isShooting && forCapture && (
-                                                    <button onClick={startCountdown}>
-                                                        <img src={cameraCapture} className='w-72' alt="Capture Photo" />
-                                                    </button>
-                                                )}
-                                            </div>
+                                            {camera.payment_enabled ? (
+                                                <div className='flex-1 flex justify-center items-center'>
+                                                    {!isShooting && forCapture && (
+                                                        <button onClick={startCountdown}>
+                                                            <img src={cameraCapture} className='w-72' alt="Capture Photo" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className='flex justify-center items-center'>
+                                                    {!isShooting && forCapture && (
+                                                        <button onClick={startCountdown}>
+                                                            <img src={cameraCapture} className='w-72' alt="Capture Photo" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
@@ -423,14 +434,25 @@ export default function CaptureScreen({ onCapture }) {
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
-                                            <div className='flex justify-around items-center gap-20'>
-                                                <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
-                                                    <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
-                                                </button>
-                                                <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
-                                                    <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
-                                                </button>
-                                            </div>
+                                            {camera.payment_enabled ? (
+                                                <div className='flex justify-around items-center gap-20'>
+                                                    <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
+                                                    </button>
+                                                    <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className='flex-1 flex justify-around items-center gap-20'>
+                                                    <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
+                                                    </button>
+                                                    <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
+                                                    </button>
+                                                </div>
+                                            )}
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД

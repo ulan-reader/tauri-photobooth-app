@@ -36,6 +36,12 @@ export const useStore = create(devtools((set) => ({
     });
   },  
   
+  settings_qr_image: null,
+
+  setQRImage: (key, image_state, path) => {
+    localStorage.setItem(key, path != null ? path : back_img);
+    set({ [image_state]: path != null ? path : back_img });
+  },
 
   license: localStorage.getItem("license") === "true",
 

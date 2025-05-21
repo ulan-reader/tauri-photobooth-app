@@ -5,11 +5,16 @@ use std::path::PathBuf;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, CONTENT_LENGTH};
 use tauri::command;
 
-const FAKE_SERVER_URL: &str = "http://192.168.1.2:80/httppay";
+const FAKE_SERVER_URL: &str = "http://192.168.1.1/httppay";
 
 #[derive(Serialize)]
 struct HttpPayRequest<'a> {
     act: &'a str,
+}
+
+#[derive(Deserialize, Debug)]
+struct ServerResponse {
+    error: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -48,6 +53,7 @@ struct OptionRequest {
 
 #[derive(Debug, Deserialize)]
 struct OptionResponse {
+    error: String,
     #[serde(default)]  // Позволяет пропустить поле
     guid: Option<String>,  // Теперь optional
     #[serde(default)]
@@ -100,8 +106,7 @@ pub async fn start_payment_session(payload: StartSessionPayload) -> Result<Strin
 
     let res = match client
         .post(FAKE_SERVER_URL)
-        .headers(headers)
-        .body(json_body)
+        .json(&body)
         .send()
         .await {
             Ok(r) => r,
@@ -117,31 +122,21 @@ pub async fn start_payment_session(payload: StartSessionPayload) -> Result<Strin
         
     println!("Получен ответ, статус: {}", res.status());
 
-    let response_text = match res.text().await {
-        Ok(t) => t,
+    let response_json: ServerResponse = match res.json().await {
+        Ok(json) => json,
         Err(e) => {
-            println!("Ошибка чтения ответа: {}", e);
-            return Err("Ошибка чтения ответа сервера".into());
+            println!("Ошибка при чтении JSON: {}", e);
+            return Err("Ошибка обработки ответа".into());
         }
     };
 
-    println!("Текст ответа: {}", response_text);
+    println!("Текст ответа: {}", response_json.error);
 
-    match response_text.as_str() {
-        "ok" => Ok("ok".into()),
-        "failure" => Ok("failure".into()),
-        "collision" => Ok("collision".into()),
-        "bad_args" => Ok("bad_args".into()),
-        "bad_values" => Ok("bad_values".into()),
-        _ => {
-            println!("Неизвестный ответ: {}", response_text);
-            Err("Неизвестный ответ сервера".into())
-        }
-    }
+    Ok(response_json.error)
 }
 
 #[tauri::command]
-pub async fn cancel_payment_session() -> Result<(), String> {
+pub async fn cancel_payment_session() -> Result<String, String> {
     let client = reqwest::Client::new();
 
     let request_body = HttpPayRequest { act: "cancel" };
@@ -154,8 +149,7 @@ pub async fn cancel_payment_session() -> Result<(), String> {
 
     let res = client
         .post(FAKE_SERVER_URL)
-        .headers(headers)
-        .body(json_body)
+        .json(&request_body)
         .send()
         .await
         .map_err(|e| format!("Cancel error: {}", e))?;
@@ -164,14 +158,21 @@ pub async fn cancel_payment_session() -> Result<(), String> {
         return Err(format!("HTTP ошибка: {}", res.status()));
     }
     
-    let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
-    println!("Cancel response: {}", text);
+    let response_json: ServerResponse = match res.json().await {
+        Ok(json) => json,
+        Err(e) => {
+            println!("Ошибка при чтении JSON: {}", e);
+            return Err("Ошибка обработки ответа".into());
+        }
+    };
 
-    Ok(())
+    println!("Cancel response: {}", response_json.error);
+
+    Ok(response_json.error)
 }
 
 #[tauri::command]
-pub async fn complete_payment_session() -> Result<(), String> {
+pub async fn complete_payment_session() -> Result<String, String> {
     let client = reqwest::Client::new();
 
     let request_body = HttpPayRequest { act: "complete" };
@@ -184,8 +185,7 @@ pub async fn complete_payment_session() -> Result<(), String> {
 
     let res = client
         .post(FAKE_SERVER_URL)
-        .headers(headers)
-        .body(json_body)
+        .json(&request_body)
         .send()
         .await
         .map_err(|e| format!("Complete error: {}", e))?;
@@ -194,10 +194,17 @@ pub async fn complete_payment_session() -> Result<(), String> {
         return Err(format!("HTTP ошибка: {}", res.status()));
     }
         
-    let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
-    println!("Complete response: {}", text);
+    let response_json: ServerResponse = match res.json().await {
+        Ok(json) => json,
+        Err(e) => {
+            println!("Ошибка при чтении JSON: {}", e);
+            return Err("Ошибка обработки ответа".into());
+        }
+    };
 
-    Ok(())
+    println!("Cancel response: {}", response_json.error);
+
+    Ok(response_json.error)
 }
 
 #[tauri::command]
@@ -214,8 +221,7 @@ pub async fn get_payment_status() -> Result<String, String> {
 
     let res = client
         .post(FAKE_SERVER_URL)
-        .headers(headers)
-        .body(json_body)
+        .json(&request_body)
         .send()
         .await
         .map_err(|e| format!("Status error: {}", e))?;
@@ -250,8 +256,7 @@ pub async fn get_device_options(ip: String) -> Result<(String, String), String> 
     // Отправляем запрос
     let res = client
         .post(&url)
-        .headers(headers)
-        .body(json_body)
+        .json(&request_body)
         .send()
         .await
         .map_err(|e| format!("Ошибка запроса: {}", e))?;
@@ -270,7 +275,7 @@ pub async fn get_device_options(ip: String) -> Result<(String, String), String> 
         .map_err(|e| format!("Ошибка парсинга JSON: {}", e))?;
 
     let guid = data.guid.unwrap_or_else(|| "default_guid".to_string());
-    let custom = data.custom.unwrap_or_else(|| "default_custom".to_string());
+    let custom = data.custom.unwrap_or_else(|| "default_custom".to_string());   
 
     Ok((guid, custom))
 }
@@ -286,33 +291,4 @@ pub async fn take_item_information_path() -> Result<String, String> {
     let script_dir = base_path.join("time");
 
     Ok(script_dir.to_string_lossy().into())
-}
-
-async fn send_simple_act(needed_act: &'static str) -> Result<(), String> {
-    let client = reqwest::Client::new();
-
-    let request_body = HttpPayRequest { act: needed_act };
-    let json_body = serde_json::to_string(&request_body)
-        .map_err(|e| format!("Ошибка сериализации: {}", e))?;
-
-    let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(CONTENT_LENGTH, HeaderValue::from_str(&json_body.len().to_string()).unwrap());
-
-    let res = client
-        .post(FAKE_SERVER_URL)
-        .headers(headers)
-        .body(json_body)
-        .send()
-        .await
-        .map_err(|e| format!("{} error: {}", needed_act, e))?;
-
-    if !res.status().is_success() {
-        return Err(format!("HTTP ошибка: {}", res.status()));
-    }
-
-    let text = res.text().await.unwrap_or_else(|_| "Нет ответа".into());
-    println!("{} response: {}", needed_act, text);
-
-    Ok(())
 }

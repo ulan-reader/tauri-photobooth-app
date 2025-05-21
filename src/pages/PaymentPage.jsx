@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePageNavigation } from "../hooks/usePageNavigation";
 import { useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api"
+import { convertFileSrc } from "@tauri-apps/api/tauri";
 import back_img from "../assets/defaultImage.jpeg";
 import { useStore } from "../admin/store";
 import { toast, ToastContainer } from "react-toastify";
@@ -9,13 +10,13 @@ import 'react-toastify/dist/ReactToastify.css';
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
 import kaspi_img from '../assets/kaspi_1.jpg';
 
-const DEVICE_IP = '192.168.1.2';
+const DEVICE_IP = '192.168.1.1';
 
 export default function PaymentPage() {
     usePageNavigation();
     const navigate = useNavigate();
     const [timer, setTimer] = useState(60);
-    const [isTimerActive, setIsTimerActive] = useState(false);
+    const [isTimerActive, setIsTimerActive] = useState(true);
     const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
     const [isPaymentFailed, setIsPaymentFailed] = useState(false);
     const [status, setStatus] = useState('idle');
@@ -33,12 +34,33 @@ export default function PaymentPage() {
         currentCanvasId,
         camera,
         setCamera,
-        background_image_2
+        background_image_2,
+        chromokey, 
+        setChromokey,
+        settings_qr_image, 
+        setQRImage,
+        project, 
+        setProject
     } = useStore();
 
+    useEffect(() => {
+        const loadImage = async () => {
+          try {
+            const image = await invoke("get_image_path", { path: `settings/qr_image` });
+            const url_image = `url(${convertFileSrc(image)})`;
+            setQRImage(`${project.name}_settings/qr_image`, "settings_qr_image", url_image);
+          } catch (err) {
+            console.error("Ошибка загрузки изображения:", err);
+          }
+        };
+    
+        loadImage();
+    }, []);
     // Таймер
     useEffect(() => {
-        if (!isTimerActive || timer <= 0) return;
+        if (!isTimerActive || timer <= 0) {
+            cancel();
+        };
         const interval = setInterval(() => {
             setTimer((prev) => prev - 1);
         }, 1000);
@@ -62,11 +84,7 @@ export default function PaymentPage() {
         try {
             setIsTimerActive(true);
             clearExistingInterval(); // Очищаем существующий интервал
-
-            const statusRes = await invoke("get_payment_status", { ip: DEVICE_IP });
-            if (typeof statusRes === "string") {
-                setStatus(statusRes);
-            }
+            startStatusPolling(); // Запускаем опрос статуса
             
             const path = await invoke("take_item_information_path");
             const filePath = `${path}/payment-data.json`;
@@ -88,34 +106,33 @@ export default function PaymentPage() {
         });
 
         // Обработка всех возможных ответов
-        // console.log("Ответ: ", result);
-        // switch (result) {
-        //     case "ok":
-        //         console.log("Платеж инициирован успешно");
-        //         break;
-        //     case "failure":
-        //         throw new Error("Ошибка платежа");
-        //         // toast.error("Не удалось обратиться на платежную систему");
-        //         // cancel();
-        //     case "collision":
-        //         throw new Error("Конфликт платежа");
-        //         // toast.error("Не удалось обратиться на платежную систему");
-        //         // cancel();
-        //     case "bad_args":
-        //         throw new Error("Неверные аргументы");
-        //         // toast.error("Не удалось обратиться на платежную систему");
-        //         // cancel();
-        //     case "bad_values":
-        //         throw new Error("Неверные значения");
-        //         // toast.error("Не удалось обратиться на платежную систему");
-        //         // cancel();
-        //     default:
-        //         throw new Error("Неизвестный ответ сервера");
-        //         // toast.error("Не удалось обратиться на платежную систему");
-        //         // cancel();
-        // }
-
-            startStatusPolling(); // Запускаем опрос статуса
+        console.log("Ответ: ", result);
+        switch (result) {
+            case "ok":
+                console.log("Платеж инициирован успешно");
+                break;
+            case "failure":
+                // throw new Error("Ошибка платежа");
+                toast.error("Не удалось начать сессию платежа");
+                cancel();
+            case "collision":
+                // throw new Error("Конфликт платежа");
+                toast.error("Не удалось обратиться на платежную систему");
+                cancel();
+            case "bad_args":
+                // throw new Error("Неверные аргументы");
+                toast.error("Для оплаты были выставлеты не верные аргументы");
+                cancel();
+            case "bad_values":
+                // throw new Error("Неверные значения");
+                toast.error("Для оплаты были выставлены не верные значения");
+                cancel();
+            default:
+                // throw new Error("Неизвестный ответ сервера");
+                toast.error("Не удалось обратиться на платежную систему");
+                cancel();
+        }
+        startStatusPolling();
         } catch (err) {
             setError("Не удалось загрузить или отправить данные: " + err);
             clearExistingInterval();
@@ -130,9 +147,14 @@ export default function PaymentPage() {
             try {
                 const res = await invoke("get_payment_status", { ip: DEVICE_IP });
                 if (typeof res === "string") {
-                    setStatus(res);
-                    console.log("Ответ на request - ", res);
+                    if (!(status === "canceled") || !(status === "complete")) setStatus(res);
+                    console.log("Ответ на status - ", res);
                     if (res === "paid") {
+                        setStatus(res);
+                        await completePayment();
+                    }
+                    else if (res === "canceled") {
+                        toast.info("Сессия была отменена контроллером");
                         await completePayment();
                     }
                 }
@@ -145,8 +167,22 @@ export default function PaymentPage() {
 
     const completePayment = async () => {
         clearExistingInterval();
-        await invoke("complete_payment_session", { ip: DEVICE_IP });
-        setIsPaymentSuccessful(true);
+        if (status === "complete") {
+            console.log("Trying to cancel!");
+            cancel();
+        }
+        console.log("Trying to complete with status: ", status);
+        const result = await invoke("complete_payment_session", { ip: DEVICE_IP });
+        if (result === "ok") {
+            if (status === "canceled") {
+                toast.error("Сессия была отменена");
+            } else{
+                setIsPaymentSuccessful(true);
+            }
+        }
+        else {
+            toast.error("Ошибка оплаты");
+        }
     };
 
     const clearExistingInterval = () => {
@@ -157,11 +193,24 @@ export default function PaymentPage() {
     };
 
     const cancel = async () => {
-        clearExistingInterval();
         try {
-            await invoke("cancel_payment_session", { ip: DEVICE_IP });
-            setStatus("canceled");
-            setIsPaymentFailed(true);
+            const result = await invoke("cancel_payment_session", { ip: DEVICE_IP });
+            if (result === "ok") {
+                setStatus("end");
+                if (!(status === "complete"))
+                {
+                    setStatus("canceled");
+                    setIsPaymentFailed(true);
+                }
+                else {
+                    console.log("Canceled. status: ", status);
+                }
+                console.log("Trying to complete");
+                completePayment();
+            }
+            else {
+                toast.error("Ошибка отмены оплаты")
+            }
         } catch (err) {
             setError(`Ошибка отмены: ${err}`);
         }
@@ -169,6 +218,8 @@ export default function PaymentPage() {
 
     const handlePayment = async () => {
         clearExistingInterval();
+
+        setStatus("complete");
         await completePayment();
         
         try {
@@ -221,16 +272,22 @@ export default function PaymentPage() {
                                 <p>{productData.name_ru} / {productData.name_kz}</p>
                                 <p>Стоимость: {productData.amount}</p>
                         </div>
-                        <img src={kaspi_img} width={400}/>
+                        {settings_qr_image ? (
+                            <img src={settings_qr_image.replace(/^url\((.*)\)$/, "$1")} width={400} />
+                        ) : (
+                            <p>QR не загружен</p>
+                        )}
                     </div>
                 )}
                     <p className="text-xl mb-8 text-center">
                         Время до отмены: <span className="font-semibold">{timer}</span> сек.
                     </p>
+                    {chromokey.printer_visible && (
                     <div className="flex flex-wrap justify-center gap-6">
                         <button onClick={handlePayment} className="px-6 py-3 bg-green-600 hover:bg-green-700 transition rounded-xl text-lg font-medium shadow-md">Симулировать успех</button>
                         <button onClick={cancel} className="px-6 py-3 bg-red-600 hover:bg-red-700 transition rounded-xl text-lg font-medium shadow-md">Симулировать ошибку</button>
                     </div>
+                    )}
                 </div>
             </div>
             <ToastContainer position="bottom-center" />
