@@ -190,7 +190,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                     <p>Номер изображения</p>
                     <input
                         type='number'
-                        min={1} max={3}
+                        min={1} max={10}
                         value={selectedObject.numberImage}
                         onChange={(e) => updateObject(selectedObjectId, { numberImage: parseInt(e.target.value, 10) })}
                         className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>

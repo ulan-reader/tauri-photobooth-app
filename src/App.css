@@ -215,9 +215,9 @@
 }
 
 .box_print {
-  width: 450px;
-  height: 550px;
-  padding: 30px;
+  /* width: 450px; */
+  /* height: 550px; */
+  /* padding: 30px; */
   display: flex;
   justify-content: center;
 }
@@ -235,4 +235,11 @@
 
 ::-webkit-scrollbar {
   display: none;
+}
+
+
+
+.stroke {
+  -webkit-text-stroke: 2px rgb(70, 159, 232); /* Толщина и цвет обводки */
+  color: white; /* Цвет заполнения текста */
 }

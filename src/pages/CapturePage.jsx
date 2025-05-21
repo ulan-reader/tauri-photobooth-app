@@ -358,7 +358,7 @@ export default function CaptureScreen({ onCapture }) {
                     <div className='flex w-screen justify-center items-center'>
                         <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px' }} className='absolute top-64 left-7'/>
                         <div className='flex flex-col gap-6 items-center px-20 w-full absolute'>
-                            <div className='text-5xl items-center text-center -top-5'>
+                            <div className='text-5xl items-center text-center -top-5 stroke'>
                                 ЧТОБЫ СОЗДАТЬ ФОТО, <br /> НАЖМИТЕ НА КНОПКУ ПОД РАМКОЙ
                             </div>
                             <div className='w-full'>
