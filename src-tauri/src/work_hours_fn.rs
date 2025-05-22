@@ -190,60 +190,60 @@ if (Get-ScheduledTask -TaskName "DailyWakeUpTask" -ErrorAction SilentlyContinue)
 # Task start time
 $taskTime = "{wake_time}"
 
-# XML file for task
+# XML path
 $taskXmlPath = "$env:temp\DailyWakeUpTask.xml"
 
-# Generate XML file
-@"
+# Составляем XML-строку
+$taskXmlContent = @"
 <?xml version="1.0" encoding="UTF-16"?>
 <Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-    <RegistrationInfo>
+  <RegistrationInfo>
     <Description>Daily wake up the computer and execute the task</Description>
-    </RegistrationInfo>
-    <Triggers>
+  </RegistrationInfo>
+  <Triggers>
     <CalendarTrigger>
-        <StartBoundary>$((Get-Date -Format "yyyy-MM-ddT") + $taskTime)</StartBoundary>
-        <Enabled>true</Enabled>
-        <ScheduleByDay>
+      <StartBoundary>$((Get-Date -Format "yyyy-MM-ddT") + $taskTime)</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
         <DaysInterval>1</DaysInterval>
-        </ScheduleByDay>
+      </ScheduleByDay>
     </CalendarTrigger>
-    </Triggers>
-    <Settings>
+  </Triggers>
+  <Settings>
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
     <StartWhenAvailable>true</StartWhenAvailable>
     <WakeToRun>true</WakeToRun>
     <AllowHardTerminate>false</AllowHardTerminate>
     <RestartOnFailure>
-        <Interval>PT1M</Interval>
-        <Count>3</Count>
+      <Interval>PT1M</Interval>
+      <Count>3</Count>
     </RestartOnFailure>
     <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    </Settings>
-    <Principals>
-        <Principal id="Author">
-            <UserId>$env:USERDOMAIN\$env:USERNAME</UserId>
-            <LogonType>InteractiveToken</LogonType>
-            <RunLevel>HighestAvailable</RunLevel>
-        </Principal>
-    </Principals>
-    <Actions Context="Author">
+  </Settings>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$env:USERDOMAIN\$env:USERNAME</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Actions Context="Author">
     <Exec>
-        <Command>powershell.exe</Command>
-        <Arguments>-ExecutionPolicy Bypass -File "{wake_script_dir}"</Arguments>
+      <Command>powershell.exe</Command>
+      <Arguments>-ExecutionPolicy Bypass -File "{wake_script_dir}"</Arguments>
     </Exec>
-    </Actions>
+  </Actions>
 </Task>
-"@ | Out-File -Encoding UTF8 -FilePath $taskXmlPath
+"@
+
+[System.IO.File]::WriteAllText($taskXmlPath, $taskXmlContent, [System.Text.Encoding]::Unicode)
 
 powercfg -setacvalueindex SCHEME_CURRENT SUB_SLEEP RTCWake 1
-powercfg -setdcvalueindex SCHEME_CURRENT SUB_SLEEP RTCWake 1
 powercfg -S SCHEME_CURRENT
 # Register task with XML
-schtasks /Create /TN "DailyWakeUpTask" /TR "powershell.exe -ExecutionPolicy Bypass -File 'C:\Users\ACER\AppData\Roaming\photobox-kazakhstan.app\Test 1\time\wake_script.ps1'" /SC DAILY /ST 18:48 /RL HIGHEST /F
-
+schtasks /Create /TN "DailyWakeUpTask" /XML "$taskXmlPath" /F
 
 # Remove the temporary XML file
 Remove-Item $taskXmlPath -Force

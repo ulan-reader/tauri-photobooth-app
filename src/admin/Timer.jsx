@@ -100,7 +100,6 @@ export default function Timer() {
                 await invoke("set_work_hours", { start: workhours.start, end: workhours.end, isAlwaysActive: workhours.is_always_active });
                 toast.success(`Фотобудка будет работать с ${workhours.start} до ${workhours.end}`);
             }
-            console.log(workhours.is_always_active)
         } catch (error) {
             toast.error("Failed to save schedule");
             console.log(error)
