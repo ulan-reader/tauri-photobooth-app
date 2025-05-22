@@ -65,13 +65,15 @@ pub async fn start_payment_session(payload: StartSessionPayload) -> Result<Strin
     
     // Валидация данных
     if payload.amount < 0.01 || payload.amount > 9999.99 {
-        println!("Неверная сумма: {}", payload.amount);
         return Err("Некорректная сумма".into());
     }
     
     if payload.name_kz.len() > 31 || payload.name_ru.len() > 31 {
-        println!("Слишком длинное название");
         return Err("Название слишком длинное".into());
+    }
+
+    if payload.item < 0 || payload.item > 65535  {
+        return Err("Некорректный номер продукта".into());
     }
 
     let client = match reqwest::Client::builder()

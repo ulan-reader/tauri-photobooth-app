@@ -214,8 +214,8 @@ export default function TemplateEditor() {
                         imgObject: img,
                         left: 0,
                         top: 0,
-                        width: 1200,
-                        height: 1800,
+                        width: currentCanvas.canvasProps.width,
+                        height: currentCanvas.canvasProps.height,
                         zIndex: 2,
                         rotate: 0,
                         opacity: 1
@@ -225,6 +225,7 @@ export default function TemplateEditor() {
                     addObject(currentCanvasId, newImage);
                 };
             };
+            toast.success("Доавлен шаблон на весь экран");
             reader.readAsDataURL(file);  // Преобразуем файл в base64
         }
     };
@@ -623,7 +624,7 @@ export default function TemplateEditor() {
     return (
         <AdminShell props={props}>
             <div className="flex flex-col">
-                <div className='flex gap-8 w-full'>
+                <div className='flex gap-8 w-full justify-between'>
                     {showTemplateModel && (
                         <div className='fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50'>
                             <div className="bg-white rounded-xl shadow-xl p-6 w-[500px] space-y-4">
@@ -679,7 +680,7 @@ export default function TemplateEditor() {
                             </div>
                         </div>
                     )}
-                    <div className="w-3/5">
+                    <div style={{width: currentCanvas?.canvasProps?.width / 3 || "400px"}}>
                         <div className="flex justify-between items-center mb-4">
                             {/* Canvas or shapes will be rendered here */}
                             <canvas ref={canvasRef} style={{ border: '1px solid black', width: currentCanvas?.canvasProps?.width / 3 || "400px", height: currentCanvas?.canvasProps?.height / 3 || "600px" }}
@@ -692,7 +693,7 @@ export default function TemplateEditor() {
                             </button> */}
                         </div>
                     </div>
-                    <div className="w-1/3">
+                    <div style={{width: "340px"}}>
                         <div className="w-full flex gap-2 flex-col">
                             <div className="grid w-full grid-cols-3 bg-gray-50 dark:bg-gray-700 p-1 rounded-md border border-gray-200 dark:border-gray-600">
                                 <button

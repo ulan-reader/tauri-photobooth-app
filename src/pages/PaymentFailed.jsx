@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import back_img from "../assets/defaultImage.jpeg";
+import { toast, ToastContainer } from "react-toastify";
+import { invoke } from "@tauri-apps/api"
+
+const DEVICE_IP = '192.168.1.1';
 
 export default function PaymentFailed() {
     const navigate = useNavigate();
@@ -18,12 +22,25 @@ export default function PaymentFailed() {
         return () => clearInterval(interval);
     }, [timer, navigate]);
 
-    const handleRetry = () => {
-        console.log("Retrying payment...");
-        navigate("/payment");
+    const handleRetry = async () => {
+        try {
+            toast.error("Подождите несколько секунд");
+            const res = await invoke("get_payment_status", { ip: DEVICE_IP });
+                if (typeof res === "string") {
+                    if (res === "collision") {  
+                        console.log("Подождите");
+                        return
+                    }
+                console.log("Retrying payment...");
+                navigate("/payment");
+                }
+        } catch (error) {
+            console.log("Ошибка повтора оплаты", error);
+        }
     };
 
     const handleCancel = () => {
+        
         console.log("Payment canceled.");
         navigate("/");
     };
@@ -59,6 +76,7 @@ export default function PaymentFailed() {
                     </div>
                 </div>
             </div>
+            <ToastContainer/>
         </div>
     );
 }

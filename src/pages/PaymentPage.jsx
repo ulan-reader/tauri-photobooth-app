@@ -103,11 +103,22 @@ export default function PaymentPage() {
             }
         }).catch(err => {
             console.error("Ошибка вызова start_payment_session:", err);
+            if (err === "Некорректная сумма"){
+                toast.error("Неверная сумма оплаты");
+            }
+            else if (err === "Название слишком длинное"){
+                toast.error("Название слишком длинное");
+            }
+            else if (err === "Некорректный номер продукта"){
+                toast.error("Некорректный номер продукта");
+            }
+            else {
+                toast.error("Терминал оплаты не подключен или не работает");
+            }
             throw new Error(`Ошибка сервера: ${err}`);
         });
 
-        // Обработка всех возможных ответов
-        console.log("Ответ: ", result);
+        console.error("Result:", result);
         switch (result) {
             case "ok":
                 console.log("Платеж инициирован успешно");
@@ -133,7 +144,6 @@ export default function PaymentPage() {
                 toast.error("Не удалось обратиться на платежную систему");
                 cancel();
         }
-        startStatusPolling();
         } catch (err) {
             setError("Не удалось загрузить или отправить данные: " + err);
             clearExistingInterval();
@@ -148,14 +158,12 @@ export default function PaymentPage() {
             try {
                 const res = await invoke("get_payment_status", { ip: DEVICE_IP });
                 if (typeof res === "string") {
-                    if (!(status === "canceled") || !(status === "complete")) setStatus(res);
-                    console.log("Ответ на status - ", res);
-                    if (res === "paid") {
-                        setStatus(res);
+                    setStatus(res);
+                    if (res === "paid") {    
                         await completePayment();
                     }
                     else if (res === "canceled") {
-                        toast.info("Сессия была отменена контроллером");
+                        toast.info("Сессия была отменена");
                         await completePayment();
                     }
                 }
@@ -168,21 +176,19 @@ export default function PaymentPage() {
 
     const completePayment = async () => {
         clearExistingInterval();
-        if (status === "complete") {
-            console.log("Trying to cancel!");
-            cancel();
-        }
-        console.log("Trying to complete with status: ", status);
-        const result = await invoke("complete_payment_session", { ip: DEVICE_IP });
-        if (result === "ok") {
-            if (status === "canceled") {
-                toast.error("Сессия была отменена");
-            } else{
-                setIsPaymentSuccessful(true);
+        try {
+            const result = await invoke("complete_payment_session", { ip: DEVICE_IP });
+            if (result === "ok") {
+                // toast.info("Оплата успешно прошла");
             }
-        }
-        else {
-            toast.error("Ошибка оплаты");
+            else if (result === "collision"){
+                toast.error("Ошибка: Поступило несколько запросов однавременно. Попробуйте снова через 60 секунд");
+            }
+            else {
+                toast.error("Ошибка оплаты");
+            }
+        } catch (err) {
+            setError(`Ошибка оплаты: ${err}`);
         }
     };
 
@@ -195,33 +201,28 @@ export default function PaymentPage() {
 
     const cancel = async () => {
         try {
+            setIsPaymentFailed(true);
             const result = await invoke("cancel_payment_session", { ip: DEVICE_IP });
             if (result === "ok") {
-                setStatus("end");
-                if (!(status === "complete"))
-                {
-                    setStatus("canceled");
-                    setIsPaymentFailed(true);
-                }
-                else {
-                    console.log("Canceled. status: ", status);
-                }
-                console.log("Trying to complete");
-                completePayment();
+                // toast.info("Оплата успешно отменена");
+            }
+            else if(result === "collision"){
+                toast.error("Ошибка: Поступило несколько запросов однавременно. Попробуйте снова через 60 секунд");
             }
             else {
-                toast.error("Ошибка отмены оплаты")
+                toast.error("Ошибка отмены оплаты");
             }
         } catch (err) {
             setError(`Ошибка отмены: ${err}`);
         }
+        await completePayment();
     };
 
     const handlePayment = async () => {
-        clearExistingInterval();
 
-        setStatus("complete");
-        await completePayment();
+        setIsPaymentSuccessful(true);
+        await cancel();
+        // await completePayment();
         
         try {
             if (!camera.isCameraOn) {
@@ -257,7 +258,9 @@ export default function PaymentPage() {
             if (!camera.isCameraOn) invoke('initialize_camera').then(() => setCamera({ isCameraOn: true }));
             navigate('/capture')
         }
-        else if (isPaymentFailed) navigate('/payment-failed');
+        else if (isPaymentFailed) {
+            navigate('/payment-failed');
+        }
     }, [isPaymentSuccessful, isPaymentFailed]);
 
     return (

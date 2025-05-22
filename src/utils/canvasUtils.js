@@ -27,7 +27,7 @@ export async function saveCanvasImage(canvasId, canvasData, canvasRef) {
             base64Image: imageBase64,
             available: canvasData.canvasProps.available,
         });
-        toast.success('Изображение сохранено');
+        // toast.success('Изображение сохранено');
         const image = await invoke('get_image_path', { path: `template/${canvasData.canvasProps.available ? `available` : `not_available`}/canvas_${canvasId}` });
         canvasData.canvasProps.webpData = convertFileSrc(image);
         // console.log('Canvas image saved successfully.');
