@@ -29,7 +29,7 @@ export default function CaptureScreen({ onCapture }) {
     // const [bgImage, setBgImage] = useState(localStorage.getItem("back_3") || `url(${back_img})`);
     const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3 } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
-    const imagesLenght = currentCanvas.objects.filter(object => object.type === 'image' && object.src === '').reduce((max, obj) => Math.max(max, obj.numberImage), 0);
+    // const imagesLenght = currentCanvas.objects.filter(object => object.type === 'image' && object.src === '').reduce((max, obj) => Math.max(max, obj.numberImage), 0);
     usePageNavigation();
     const canvasRefDataImage = useRef(null);
     const canvasRefMain = useRef(null);
@@ -48,6 +48,10 @@ export default function CaptureScreen({ onCapture }) {
     const [errCount, setErrCount] = useState(0);
     const canvasRefLayout = useRef(null);
     const [forCapture, setForCapture] = useState(true);
+    const [isImageCounted, setIsImageCounted] = useState(false);
+    const [imagesLenght, setImagesLenght] = useState(0);
+    const clearedNumbers = new Set(); // Используем Set для исключения повторений
+    let uniqueClearedNumbers = [];
     // useEffect(() => {
     //     const fetchImage = async () => {
     //         try {
@@ -79,11 +83,6 @@ export default function CaptureScreen({ onCapture }) {
         bgCanvas.height = 630;
         drawCromakeyBackgroundImage(bgCtx, bgCanvas, chromokey.backgroundImage, true)
     }, [chromokey]);
-    
-
-    useEffect(() => {
-        drawBackImage();
-    }, [capturedImage]);
 
     const processVideoFrames = useCallback((base64Image, test_num) => {
         const canvas = canvasRefMain.current;
@@ -269,58 +268,61 @@ export default function CaptureScreen({ onCapture }) {
         });
     }, [startCountdown]);
 
-    const updateImageCapture = useCallback(() => {
-        const canvas = canvasRefLayout.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            
-            currentCanvas.objects.forEach(object => {
-                    // console.log(images.length)
-                    // console.log(object.numberImage)
-                    const objectID = object.id;
-                    console.log({objectID})
-                    console.log(images.length);
-                    // images.map((img) => {
-                    //     const id = img.id;
-                    //     console.log({id})
-                    // });
-
-                    if (object.numberImage === 1 && images.length === 0) {
-                        updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                        updateObjectProps(currentCanvasId, object.id, { src: capturedImage });
-                    }
-                    if (object.numberImage === 2 && images.length === 1) {
-                        updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                        updateObjectProps(currentCanvasId, object.id, { src: capturedImage });
-                    }
-                    if (object.numberImage === 3 && images.length === 2) {
-                        updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                        updateObjectProps(currentCanvasId, object.id, { src: capturedImage });
-                    }
-            })
-        }
-    }, [capturedImage, images.length]);
-
+    const first_counter = () => {
+        setIsImageCounted(true);
+        clearedNumbers.clear(); // очищаем set перед новым проходом
+        garbedCanvas(currentCanvas);
+    }
     useEffect(() => {
+        if (!isImageCounted) first_counter();
         updateImageCapture();
+        drawBackImage();
     }, [capturedImage]);
 
     const garbedCanvas = (currentCanvas) => {
+
         currentCanvas.objects.forEach(object => {
             if (object.type === 'image') {
-                console.log(object.numberImage)
-                if (object.numberImage === 1) {
-                    updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                }
-                if (object.numberImage === 2) {
-                    updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                }
-                if (object.numberImage === 3) {
-                    updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
+                updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
+
+                if (object.numberImage != null) {
+                    clearedNumbers.add(object.numberImage); // Сохраняем уникальные номера
                 }
             }
-        })
+        });
+        uniqueClearedNumbers = Array.from(clearedNumbers);
+        setImagesLenght(clearedNumbers.size);
     }
+
+    const updateImageCapture = useCallback(() => {
+        const canvas = canvasRefLayout.current;
+        if (!canvas || !currentCanvas) return;
+
+        const ctx = canvas.getContext('2d');
+
+        // 1. Получаем уникальные номера numberImage по возрастанию
+        const uniqueSortedNumbers = Array.from(
+            new Set(
+                currentCanvas.objects
+                    .filter(obj => obj.type === 'image' && obj.numberImage != null)
+                    .map(obj => obj.numberImage)
+            )
+        ).sort((a, b) => a - b);
+
+        // 2. Получаем целевой номер, соответствующий images.count
+        const targetNumber = uniqueSortedNumbers[images.length];
+
+        if (targetNumber === undefined) return; // если изображение лишнее — игнорируем
+
+        // 3. Вставляем снимок во все объекты с этим номером
+        currentCanvas.objects.forEach(object => {
+            if (object.type === 'image' && object.numberImage === targetNumber) {
+                updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
+                updateObjectProps(currentCanvasId, object.id, { src: capturedImage });
+            }
+        });
+    }, [capturedImage, images.length]);
+
 
     useEffect(() => {
         const canvas = canvasRefLayout.current;

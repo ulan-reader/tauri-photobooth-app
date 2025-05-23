@@ -39,6 +39,12 @@ export default function TemplatePage({ design, setDesign }) {
     //     fetchImage();
     // },[]);
 
+    useEffect(() => {
+        const canvasHolder = () => {
+            setCurrentIndex(availableCanvases.findIndex(t => t.id === currentCanvasId));
+        };
+        canvasHolder();
+    },[]);
     const handleNext = async () => {
         try {
             console.log("init camera")
@@ -105,7 +111,7 @@ export default function TemplatePage({ design, setDesign }) {
                                         <img
                                             src={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.webpData}
                                             alt={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.name}
-                                            className="w-64 max-h-96 opacity-50 cursor-pointe"
+                                            className="w-64 max-h-96 opacity-50 cursor-pointer"
                                             onClick={prevSlide}
                                         />
                                         <img

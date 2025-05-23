@@ -177,7 +177,6 @@ export default function PaymentPage() {
                 }
             } catch (err) {
                 setError(`Ошибка статуса: ${err}`);
-                clearExistingInterval();
             }
         }, 1000);
     };

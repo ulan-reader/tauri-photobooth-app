@@ -1420,6 +1420,7 @@ function Print-Image {
     Add-Type -AssemblyName System.Drawing
     $printDocument = New-Object System.Drawing.Printing.PrintDocument
     $printDocument.PrinterSettings.PrinterName = $PrinterName
+    $printDocument.OriginAtMargins = $false
     $image = [System.Drawing.Image]::FromFile($FilePath)
 
     # Определяем ориентацию бумаги
@@ -1433,7 +1434,8 @@ function Print-Image {
     $printDocument.add_PrintPage({
         param($sender, $e)
         $img = [System.Drawing.Image]::FromFile($FilePath)  # Загружаем изображение в обработчике
-        
+
+        $e.PageSettings.Margins = New-Object System.Drawing.Printing.Margins(0,0,0,0)
         # Определяем размеры бумаги
         $pageWidth = $e.PageBounds.Width
         $pageHeight = $e.PageBounds.Height
@@ -1445,16 +1447,18 @@ function Print-Image {
         $scaledHeight = $img.Height * $scaleFactor
         
         # Центрируем изображение
-        $x = ($pageWidth - $scaledWidth) / 2
-        $y = ($pageHeight - $scaledHeight) / 2
+        $x = $e.MarginBounds.Left + ($pageWidth - $scaledWidth) / 2
+        $y = $e.MarginBounds.Top + ($pageHeight - $scaledHeight) / 2
 
-        $e.Graphics.DrawImage($img, $x, $y, $scaledWidth, $scaledHeight)
+        $e.Graphics.DrawImage($img, 0, 0, $scaledWidth + 1, $scaledHeight)
         $img.Dispose()  # Освобождаем ресурс после использования
     })
 
     # Качество печати
+
     $printDocument.PrinterSettings.DefaultPageSettings.PrinterResolution.Kind = [System.Drawing.Printing.PrinterResolutionKind]::High
     $printDocument.PrintController = New-Object System.Drawing.Printing.StandardPrintController
+
     $printDocument.Print()
 }
     "#;
@@ -1462,7 +1466,7 @@ function Print-Image {
     let command = format!(
         r#"
 {}
-Print-Image -PrinterName "{}" -FilePath {} -Scale 97 -PaperSize "6x4-Split (6x2 2 prints)" -PrintJobName "ImagePrintJob" -PrintQuality "High"
+Print-Image -PrinterName "{}" -FilePath {} -Scale 100 -PaperSize "6x4-Split (6x2 2 prints)" -PrintJobName "ImagePrintJob" -PrintQuality "High"
         "#,
         print_function,
         printer_name,
@@ -1763,6 +1767,7 @@ function Print-Image {
     Add-Type -AssemblyName System.Drawing
     $printDocument = New-Object System.Drawing.Printing.PrintDocument
     $printDocument.PrinterSettings.PrinterName = $PrinterName
+    $printDocument.OriginAtMargins = $false
     $image = [System.Drawing.Image]::FromFile($FilePath)
 
     # Определяем ориентацию бумаги
@@ -1776,7 +1781,8 @@ function Print-Image {
     $printDocument.add_PrintPage({
         param($sender, $e)
         $img = [System.Drawing.Image]::FromFile($FilePath)  # Загружаем изображение в обработчике
-        
+
+        $e.PageSettings.Margins = New-Object System.Drawing.Printing.Margins(0,0,0,0)
         # Определяем размеры бумаги
         $pageWidth = $e.PageBounds.Width
         $pageHeight = $e.PageBounds.Height
@@ -1788,10 +1794,10 @@ function Print-Image {
         $scaledHeight = $img.Height * $scaleFactor
         
         # Центрируем изображение
-        $x = ($pageWidth - $scaledWidth) / 2
-        $y = ($pageHeight - $scaledHeight) / 2
+        $x = $e.MarginBounds.Left + ($pageWidth - $scaledWidth) / 2
+        $y = $e.MarginBounds.Top + ($pageHeight - $scaledHeight) / 2
 
-        $e.Graphics.DrawImage($img, $x, $y, $scaledWidth, $scaledHeight)
+        $e.Graphics.DrawImage($img, 0, 0, $scaledWidth + 1, $scaledHeight)
         $img.Dispose()  # Освобождаем ресурс после использования
     })
 
@@ -1805,7 +1811,7 @@ function Print-Image {
     let command = format!(
         r#"
 {}
-Print-Image -PrinterName "{}" -FilePath {} -Scale 97 -PaperSize "6x4-Split (6x2 2 prints)" -PrintJobName "ImagePrintJob" -PrintQuality "High"
+Print-Image -PrinterName "{}" -FilePath {} -Scale 100 -PaperSize "6x4-Split (6x2 2 prints)" -PrintJobName "ImagePrintJob" -PrintQuality "High"
         "#,
         print_function,
         printer_name,

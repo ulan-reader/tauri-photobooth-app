@@ -132,7 +132,7 @@ export default function PrintPage({ images, design, setDesign }) {
               </button> */}
               <div className='grid grid-cols-3 items-center'>
                 <div className='w-28'></div>
-                <div className='relative items-center box_print'>
+                <div className='relative items-center box_print' style={{width: '400px' }}>
                   <div className='bg_print' ></div>
                   <div>
                     <div  className='absolute bottom-1 left-0 w-full h-full flex gap-10 justify-center items-center z-10'>
@@ -140,7 +140,7 @@ export default function PrintPage({ images, design, setDesign }) {
                         ref={canvasRef}
                         width={currentCanvas.canvasProps.width}
                         height={currentCanvas.canvasProps.height}
-                        style={{ maxWidth: '380px', maxHeight: '570px', display: 'block'}}
+                        style={{ maxWidth: '380px', maxHeight: '500px', display: 'block'}}
                       ></canvas>
                     </div>
                   </div>
