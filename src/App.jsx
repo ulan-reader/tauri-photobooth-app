@@ -33,7 +33,17 @@ export function CheckLicense({ children }) {
       navigate('/license');
     }
   }, [license, navigate]);
+  useEffect(() => {
+      const disableContextMenu = (e) => {
+        e.preventDefault(); // Отключает стандартное контекстное меню
+      };
 
+      window.addEventListener("contextmenu", disableContextMenu);
+
+      return () => {
+        window.removeEventListener("contextmenu", disableContextMenu);
+      };
+  }, []);
   return license ? children : null;
 }
 

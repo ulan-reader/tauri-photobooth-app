@@ -21,6 +21,7 @@ export default function PaymentPage() {
     const [isPaymentFailed, setIsPaymentFailed] = useState(false);
     const [status, setStatus] = useState('idle');
     const [error, setError] = useState('');
+    const [isSessionStarted, setIsSessionStarted] = useState(false);
     const [productData, setProductData] = useState({
         name_ru: "",
         name_kz: "",
@@ -57,11 +58,14 @@ export default function PaymentPage() {
         loadImage();
     }, []);
     // Таймер
+    let interval;
     useEffect(() => {
         if (!isTimerActive || timer <= 0) {
             cancel();
+            setTimer((prev) => prev + 2);
+            clearInterval(interval);
         };
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
             setTimer((prev) => prev - 1);
         }, 1000);
         return () => clearInterval(interval);
@@ -153,18 +157,22 @@ export default function PaymentPage() {
     // Вынесем логику опроса статуса в отдельную функцию
     const startStatusPolling = () => {
         intervalRef.current = setInterval(async () => {
-            if (!isMountedRef.current) return;
             
             try {
                 const res = await invoke("get_payment_status", { ip: DEVICE_IP });
                 if (typeof res === "string") {
                     setStatus(res);
+                    console.log("Ответ status - ", res);
                     if (res === "paid") {    
                         await completePayment();
+                        setIsPaymentSuccessful(true);
                     }
                     else if (res === "canceled") {
                         toast.info("Сессия была отменена");
                         await completePayment();
+                    }
+                    else if (res === "session") {
+                        setIsSessionStarted(true);
                     }
                 }
             } catch (err) {
@@ -175,11 +183,11 @@ export default function PaymentPage() {
     };
 
     const completePayment = async () => {
-        clearExistingInterval();
         try {
             const result = await invoke("complete_payment_session", { ip: DEVICE_IP });
             if (result === "ok") {
                 // toast.info("Оплата успешно прошла");
+                clearExistingInterval();
             }
             else if (result === "collision"){
                 toast.error("Ошибка: Поступило несколько запросов однавременно. Попробуйте снова через 60 секунд");
@@ -201,10 +209,10 @@ export default function PaymentPage() {
 
     const cancel = async () => {
         try {
-            setIsPaymentFailed(true);
             const result = await invoke("cancel_payment_session", { ip: DEVICE_IP });
             if (result === "ok") {
                 // toast.info("Оплата успешно отменена");
+                setIsPaymentFailed(true);
             }
             else if(result === "collision"){
                 toast.error("Ошибка: Поступило несколько запросов однавременно. Попробуйте снова через 60 секунд");
@@ -239,16 +247,9 @@ export default function PaymentPage() {
     };
 
     useEffect(() => {
-        isMountedRef.current = true;
-        return () => {
-            isMountedRef.current = false;
-            clearExistingInterval();
-        };
-    }, []);
-
-    useEffect(() => {
         if (timer === 0 && !isPaymentSuccessful) {
             setIsPaymentFailed(true);
+            clearExistingInterval();
             navigate('/payment-failed');
         }
     }, [timer]);
@@ -256,9 +257,11 @@ export default function PaymentPage() {
     useEffect(() => {
         if (isPaymentSuccessful) {
             if (!camera.isCameraOn) invoke('initialize_camera').then(() => setCamera({ isCameraOn: true }));
+            clearExistingInterval();
             navigate('/capture')
         }
         else if (isPaymentFailed) {
+            clearExistingInterval();
             navigate('/payment-failed');
         }
     }, [isPaymentSuccessful, isPaymentFailed]);
@@ -279,10 +282,10 @@ export default function PaymentPage() {
                                 <p>{productData.name_ru} / {productData.name_kz}</p>
                                 <p>Стоимость: {productData.amount}</p>
                         </div>
-                        {settings_qr_image ? (
+                        {(settings_qr_image && isSessionStarted) ? (
                             <img src={settings_qr_image.replace(/^url\((.*)\)$/, "$1")} width={400} />
                         ) : (
-                            <p>QR не загружен</p>
+                            <p className="text-6xl bold text-center">QR не загружен</p>
                         )}
                     </div>
                 )}

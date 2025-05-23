@@ -47,7 +47,12 @@ export default function TemplatePage({ design, setDesign }) {
             //     await invoke('initialize_camera');
             //     setCamera({ isCameraOn: true });
             // }
-            if (camera.payment_enabled) navigate('/payment');
+            if (camera.payment_enabled) {
+                const settings = await invoke('read_settings');
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
+                
+                navigate('/payment');
+            }
             else {
                 if (!camera.isCameraOn) {
                     await invoke('initialize_camera');

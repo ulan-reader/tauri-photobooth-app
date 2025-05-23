@@ -81,7 +81,7 @@ export async function handleSaveProject(selectedProject, setProject, setActive, 
             setProject({ isCurrent: false, name: selectedProject.name });
             // console.log(selectedProject.name);
             
-            toast.success("Сохранено успешно!");
+            // toast.success("Сохранено успешно!");
             setActive(true);
             [1, 2, 3, 4].forEach(async (index) => {
                 try {
