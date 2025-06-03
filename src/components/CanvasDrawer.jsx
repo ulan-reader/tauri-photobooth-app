@@ -194,26 +194,38 @@ const styles = {
 
 // Функция для рисования изображения в режиме выбора
 export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, backImage, design) => {
-    if (!obj.imgObject) {
+    // Create a new image object if it doesn't exist or if src has changed
+    if (!obj.imgObject || obj.imgObject.src !== obj.src) {
+        if (obj.imgObject) {
+            // Clean up old image object
+            obj.imgObject.onload = null;
+            obj.imgObject.onerror = null;
+        }
         obj.imgObject = new Image();
         obj.imgObject.crossOrigin = "anonymous";
         obj.imgObject.src = obj.src;
-    } else if (obj.imgObject.src !== obj.src) {
-        // Обновляем src, если оно изменилось (или не задано)
-        obj.imgObject.src = obj.src;
+    }
+
+    // Handle image loading errors only if we have a src
+    if (obj.src) {
+        obj.imgObject.onerror = () => {
+            console.error('Failed to load image:', obj.src);
+            // Draw a placeholder or error state only if we have a src
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
+        };
     }
 
     // Отрисовка изображения после загрузки
-    if (bool == true) {
+    if (bool === true) {
         if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(obj.numberImage)) {
             setShadow(ctx, obj);
             const style = styles[obj.numberImage];
-            if (style) drawSquare(ctx, obj, style.color, style.number) 
-            // ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
+            if (style) drawSquare(ctx, obj, style.color, style.number);
             offShadow(ctx);
             if (obj.strokeWidth) setStroke(ctx, obj);
         } else {
-            obj.imgObject.onload = () => {
+            const drawImage = () => {
                 setShadow(ctx, obj);
                 ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
                 offShadow(ctx);
@@ -221,47 +233,40 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
             };
 
             if (obj.imgObject.complete) {
-                obj.imgObject.onload();
+                drawImage();
             } else {
-                obj.imgObject.crossOrigin = "anonymous";
-                obj.imgObject.onload = () => {
-                    setShadow(ctx, obj);
-                    ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
-                    offShadow(ctx);
-                    if (obj.strokeWidth) setStroke(ctx, obj);
-                };
+                obj.imgObject.onload = drawImage;
             }
         }
     } else {
         if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(obj.numberImage)) {
-            if (design) ctx.filter = 'grayscale(1)'
-            else ctx.filter = 'grayscale(0)'
-            obj.imgObject.onload = () => {
+            if (design) ctx.filter = 'grayscale(1)';
+            else ctx.filter = 'grayscale(0)';
+
+            const drawImage = () => {
                 if (chromokeyEnabled) drawCromakeyBackgroundImage(ctx, obj, chromokeyBackgroundImage, backImage);
-                // Пропорции изображения и объекта
+                
                 const imgAspectRatio = obj.imgObject.width / obj.imgObject.height;
                 const objectAspectRatio = obj.width / obj.height;
                 let drawWidth, drawHeight, offsetX, offsetY;
-                // Рассчитываем размеры и смещение для "object-cover"
+
                 if (imgAspectRatio > objectAspectRatio) {
-                    // Изображение шире объекта
                     drawWidth = obj.height * imgAspectRatio;
                     drawHeight = obj.height;
                     offsetX = -(drawWidth - obj.width) / 2;
                     offsetY = 0;
                 } else {
-                    // Изображение выше объекта
                     drawWidth = obj.width;
                     drawHeight = obj.width / imgAspectRatio;
                     offsetX = 0;
                     offsetY = -(drawHeight - obj.height) / 2;
                 }
-                // Рисуем изображение с обрезкой
-                ctx.save(); // Сохраняем текущий контекст
-                ctx.translate(obj.x, obj.y); // Перемещаемся в позицию объекта
+
+                ctx.save();
+                ctx.translate(obj.x, obj.y);
                 ctx.beginPath();
-                ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height); // Ограничиваем область
-                ctx.clip(); // Применяем обрезку
+                ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
+                ctx.clip();
                 ctx.drawImage(
                     obj.imgObject,
                     offsetX - obj.width / 2,
@@ -269,23 +274,29 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
                     drawWidth,
                     drawHeight
                 );
-                ctx.restore(); // Восстанавливаем контекст
+                ctx.restore();
             };
+
+            if (obj.imgObject.complete) {
+                drawImage();
+            } else {
+                obj.imgObject.onload = drawImage;
+            }
         } else {
-            obj.imgObject.onload = () => {
+            const drawImage = () => {
                 setShadow(ctx, obj);
                 ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
                 offShadow(ctx);
                 if (obj.strokeWidth) setStroke(ctx, obj);
             };
-        }
 
-        if (obj.imgObject.complete) {
-            obj.imgObject.onload();
+            if (obj.imgObject.complete) {
+                drawImage();
+            } else {
+                obj.imgObject.onload = drawImage;
+            }
         }
     }
-
-    // Проверка, если изображение уже загружено, то сразу рисуем
 };
 // Функция для рисования квадрата с номером изображения
 export const drawSquare = (ctx, obj, fill, numberImage) => {

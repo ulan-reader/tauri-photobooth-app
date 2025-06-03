@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import back_img from "../assets/defaultImage.jpeg";
+import back_img from "../assets/defaultImage_2.png";
 import { toast, ToastContainer } from "react-toastify";
 import { invoke } from "@tauri-apps/api"
 

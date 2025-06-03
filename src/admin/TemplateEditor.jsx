@@ -503,7 +503,7 @@ export default function TemplateEditor() {
                 const canvasSel = canvasRefForSelect.current;
                 const ctxSel = canvasSel.getContext('2d');
                 canvas.objects.map((obj) => {
-                    if (obj.type === 'image') obj.imgObject = '';
+                    if (obj.type === 'image' && obj.numberImage != null) obj.imgObject = '';
                 });
                 const saved = setInterval(() => {
                     drawMyCanvas(ctxSel, canvasSel, canvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);

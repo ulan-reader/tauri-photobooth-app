@@ -2,7 +2,6 @@ import { Link, NavLink, resolvePath, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from 'react';
 import '../App.css';
 import main_icon from '../assets/main_camera_icon.png';
-import back_img from '../assets/defaultImage.jpeg';
 import { toast,ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri";
@@ -15,7 +14,7 @@ import { drawMyCanvas } from "../components/CanvasDrawer";
 import { Settings } from "lucide-react"
 import { set } from "lodash";
 import printer from "../assets/printer.png";
-import backgroundUrl from "../assets/defaultImage.jpeg";
+import backgroundUrl from "../assets/defaultImage.png";
 import { appDir, configDir } from '@tauri-apps/api/path';
 import { fetchProjects, fetchTemplate, getReferences, getSavedPrinter, handleSaveProject, updateSettings } from "../utils/projectConfig.js";
 

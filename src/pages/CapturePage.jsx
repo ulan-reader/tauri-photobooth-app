@@ -282,7 +282,7 @@ export default function CaptureScreen({ onCapture }) {
     const garbedCanvas = (currentCanvas) => {
 
         currentCanvas.objects.forEach(object => {
-            if (object.type === 'image') {
+            if (object.type === 'image' && object.numberImage != null) {
                 updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
 
                 if (object.numberImage != null) {

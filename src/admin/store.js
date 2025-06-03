@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import back_img from '../assets/defaultImage.jpeg'; // Фоновое изображение
+import back_img_2 from '../assets/defaultImage_2.png'; // Фоновое изображение
+import back_img from '../assets/defaultImage.png'; // Фоновое изображение
+// import back_img_3 from '../assets/defaultImage_3.png'; // Фоновое изображение
+// import back_img_4 from '../assets/defaultImage_4.png'; // Фоновое изображение
 import { background } from '@chakra-ui/react';
 
 const updateCanvasProperty = (canvasId, propertyUpdates) => set((state) => ({
@@ -14,9 +17,9 @@ const updateCanvasProperty = (canvasId, propertyUpdates) => set((state) => ({
 export const useStore = create(devtools((set) => ({
 
   background_image_1: `url(${back_img})`,
-  background_image_2: `url(${back_img})`,
-  background_image_3: `url(${back_img})`,
-  background_image_4: `url(${back_img})`,
+  background_image_2: `url(${back_img_2})`,
+  background_image_3: `url(${back_img_2})`,
+  background_image_4: `url(${back_img_2})`,
 
   setBackgroundImage: (key, image_state, path) => {
       localStorage.setItem(key, path != null ? path : back_img);
@@ -24,15 +27,22 @@ export const useStore = create(devtools((set) => ({
   },
 
   resetBackgrounds: () => {
-    const defaultPath = back_img; // или путь к дефолтной картинке
-    ['background_image_1', 'background_image_2', 'background_image_3', 'background_image_4'].forEach((key) => {
+    const defaultPaths = {
+      background_image_1: back_img,
+      background_image_2: back_img_2,
+      background_image_3: back_img,
+      background_image_4: back_img
+    };
+    
+    Object.keys(defaultPaths).forEach((key) => {
       localStorage.removeItem(key);
     });
+    
     set({
-      background_image_1: defaultPath,
-      background_image_2: defaultPath,
-      background_image_3: defaultPath,
-      background_image_4: defaultPath,
+      background_image_1: defaultPaths.background_image_1,
+      background_image_2: defaultPaths.background_image_2,
+      background_image_3: defaultPaths.background_image_3,
+      background_image_4: defaultPaths.background_image_4,
     });
   },  
   

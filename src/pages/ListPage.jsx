@@ -6,6 +6,7 @@ import image from '../assets/image.png'
 import refresh_icon from '../assets/refresh.png'
 import templateTriangle from '../assets/templateTriangle.png';
 import { usePageNavigation } from "../hooks/usePageNavigation";
+import back_img from '../assets/defaultImage_2.png'; // Фоновое изображение
 
 export default function ListPage() {
     usePageNavigation();
@@ -37,7 +38,7 @@ export default function ListPage() {
 
     return (
         <div className="flex justify-center items-center ">
-            <div className="select-none relative flex flex-col bg-cover bg-center bg-no-repeat" style={{width: '1280px', height: '1024px', backgroundImage: `url(${image})`}}>
+            <div className="select-none relative flex flex-col bg-cover bg-center bg-no-repeat" style={{width: '1280px', height: '1024px', backgroundImage: `url(${back_img})`}}>
                 <div className="flex justify-around items-center w-full py-5 px-10 h-24">
                     <NavLink to="/" className="flex items-center gap-2 px-2 py-1 bg-blue-600 text-white rounded-md"><img className='w-2 -scale-x-100' src={templateTriangle} alt="Forward" />Назад</NavLink>
                     <h1 className="text-4xl font-bold">Список фотографий</h1>

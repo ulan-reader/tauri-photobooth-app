@@ -1,5 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { toast } from "react-toastify";
+import back_img_2 from '../assets/defaultImage_2.png'; // Фоновое изображение
 
 
 export async function fetchProjects(setProjects) {
@@ -44,8 +45,8 @@ export async function updateSettings(setChromokey, setCamera, backgroundUrl) {
         setChromokey({ backgroundImage: { imgObject: imageObject, src: imageObject.src } });
     } catch (err) {
         const imageObject = new Image();
-        imageObject.src = backgroundUrl;
-        setChromokey({ backgroundImage: { imgObject: imageObject, src: backgroundUrl } });
+        imageObject.src = back_img_2;
+        setChromokey({ backgroundImage: { imgObject: imageObject, src: back_img_2 } });
         console.error('Ошибка загрузки фона:', err);
     }
 }
@@ -89,7 +90,9 @@ export async function handleSaveProject(selectedProject, setProject, setActive, 
                     const url_image = `url(${convertFileSrc(image)})`;
                     setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, url_image);
                 } catch (err) {
-                    setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, `url(${backgroundUrl})`);
+                    if (index === 1) setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, `url(${backgroundUrl})`);
+                    else setBackgroundImage(`${selectedProject.name}_background_image_${index}`, `background_image_${index}`, `url(${back_img_2})`);
+                    
                     console.error(err);
                 }
             });
