@@ -1,7 +1,7 @@
-#![cfg_attr(
-    all(not(debug_assertions), target_os = "windows"),
-    windows_subsystem = "windows"
-)]
+// #![cfg_attr(
+//     all(not(debug_assertions), target_os = "windows"),
+//     windows_subsystem = "windows"
+// )]
 
 mod globals;
 mod fs_utils;
@@ -130,8 +130,8 @@ struct Camera {
     camera_ref: *mut c_void,
     is_live_view_started: bool,
     photo_created: Arc<Mutex<bool>>,
+    session_open: bool,
 }
-
 
 unsafe impl Send for Camera {}
 unsafe impl Sync for Camera {}
@@ -140,29 +140,12 @@ impl Camera {
     fn new() -> Result<Arc<Mutex<Self>>, u32> {
         unsafe {
             let err = EdsInitializeSDK();
-            // println!("EdsInitializeSDK: {}", err);
             if err != 0 {
-                if err == 2 { // Убедитесь, что код ошибки 2 соответствует вашей логике
-                    // println!("[WARNING] Camera busy or session error. Retrying...");
-                    // EdsCloseSession(camera_ref_in); // Закрытие на случай повторного открытия
-                    // EdsRelease(camera_ref_in);
-                    EdsTerminateSDK();
-                    // Используем ограничение на количество попыток вместо рекурсии
-                    // for _ in 0..3 {
-                        std::thread::sleep(std::time::Duration::from_secs(1));
-                        if let Ok(camera) = Self::new() {
-                            camera.lock().unwrap().start_live_view().unwrap();
-
-                            return Ok(camera);
-                        }
-                    // }
-                }
                 return Err(err);
             }
 
             let mut camera_list: *mut c_void = std::ptr::null_mut();
             let err = EdsGetCameraList(&mut camera_list);
-            // println!("EdsGetCameraList: {}", err);
             if err != 0 {
                 EdsTerminateSDK();
                 return Err(err);
@@ -178,58 +161,199 @@ impl Camera {
 
             let mut camera_ref_in: *mut c_void = std::ptr::null_mut();
             let err = EdsGetChildAtIndex(camera_list, 0, &mut camera_ref_in);
-            // println!("EdsGetChildAtIndex: {}", err);
             EdsRelease(camera_list);
             if err != 0 {
                 EdsTerminateSDK();
                 return Err(err);
             }
 
-            let err = EdsOpenSession(camera_ref_in);
-            // println!("EdsOpenSession: {}", err);
+            let camera = Arc::new(Mutex::new(Camera {
+                camera_ref: camera_ref_in,
+                is_live_view_started: false,
+                photo_created: Arc::new(Mutex::new(false)),
+                session_open: false,
+            }));
+
+            // Открываем сессию и настраиваем камеру
+            if let Ok(mut camera_lock) = camera.lock() {
+                camera_lock.open_session()?;
+                camera_lock.setup_camera()?;
+            }
+
+            Ok(camera)
+        }
+    }
+
+    fn open_session(&mut self) -> Result<(), u32> {
+        unsafe {
+            if self.session_open {
+                return Ok(());
+            }
+
+            let err = EdsOpenSession(self.camera_ref);
             if err != 0 {
-                EdsRelease(camera_ref_in);
-                EdsTerminateSDK();
+                eprintln!("[ERROR] Failed to open session: 0x{:X}", err);
                 return Err(err);
             }
 
-            let mut save_target: u32 = 2;
-            let capacity = EdsCapacity {
-                number_of_free_clusters: 0x7FFFFFFF,  // Проверь, не слишком ли большое значение
-                bytes_per_sector: 512,                // Убедись, что камера поддерживает 0x1000
-                reset: true,
-            };            
+            self.session_open = true;
+            println!("[LOG] Camera session opened successfully.");
+            Ok(())
+        }
+    }
 
+    fn close_session(&mut self) -> Result<(), u32> {
+        unsafe {
+            if !self.session_open {
+                return Ok(());
+            }
+
+            // Останавливаем live view перед закрытием сессии
+            if self.is_live_view_started {
+                let _ = self.stop_live_view();
+            }
+
+            let err = EdsCloseSession(self.camera_ref);
+            if err != 0 {
+                eprintln!("[ERROR] Failed to close session: 0x{:X}", err);
+                return Err(err);
+            }
+
+            self.session_open = false;
+            println!("[LOG] Camera session closed successfully.");
+            Ok(())
+        }
+    }
+
+    fn setup_camera(&mut self) -> Result<(), u32> {
+        unsafe {
+            // Устанавливаем цель сохранения на компьютер
+            let mut save_target: u32 = 2; // kEdsSaveTo_Host
             let result = EdsSetPropertyData(
-                camera_ref_in,
-                0x0000000b,
+                self.camera_ref,
+                0x0000000b, // kEdsPropID_SaveTo
                 0,
                 4,
                 &mut save_target as *mut _ as *mut c_void,
             );
             if result != 0 {
                 eprintln!("[ERROR] Failed to set save target. Error code: 0x{:X}", result);
+            } else {
+                println!("[LOG] Save target set to computer successfully.");
             }
-            println!("[LOG] Save target set successfully.");
-    
-            // Установка емкости
-            let result = EdsSetCapacity(camera_ref_in, capacity);
+
+            // Устанавливаем емкость
+            let capacity = EdsCapacity {
+                number_of_free_clusters: 0x7FFFFFFF,
+                bytes_per_sector: 512,
+                reset: true,
+            };
+            let result = EdsSetCapacity(self.camera_ref, capacity);
             if result != 0 {
                 eprintln!("[ERROR] Failed to set capacity. Error code: 0x{:X}", result);
+            } else {
+                println!("[LOG] Camera capacity set successfully.");
             }
 
-            
+            // Настраиваем автофокус
+            self.setup_autofocus()?;
 
-            EdsRelease(camera_list);
-            let camera = Arc::new(Mutex::new(Camera {
-                camera_ref: camera_ref_in,
-                is_live_view_started: false,
-                photo_created: Arc::new(Mutex::new(false)),
-                // photo_created: Arc::new((Mutex::new(false), Condvar::new())),
-            }));
+            // Устанавливаем обработчики событий
+            self.setup_event_handlers()?;
 
-            // println!("[INFO] Camera initialized successfully.");
-            Ok(camera)
+            Ok(())
+        }
+    }
+
+    fn setup_autofocus(&mut self) -> Result<(), u32> {
+        unsafe {
+            // Включаем автофокус
+            let mut af_mode: u32 = 0; // kEdsAEMode_Program
+            let result = EdsSetPropertyData(
+                self.camera_ref,
+                0x00000004, // kEdsPropID_AEMode
+                0,
+                4,
+                &mut af_mode as *mut _ as *mut c_void,
+            );
+            if result != 0 {
+                eprintln!("[ERROR] Failed to set AE mode. Error code: 0x{:X}", result);
+            } else {
+                println!("[LOG] AE mode set to Program successfully.");
+            }
+
+            // Устанавливаем режим автофокуса
+            let mut af_mode_setting: u32 = 0; // kEdsAFMode_OneShot
+            let result = EdsSetPropertyData(
+                self.camera_ref,
+                0x00000005, // kEdsPropID_AFMode
+                0,
+                4,
+                &mut af_mode_setting as *mut _ as *mut c_void,
+            );
+            if result != 0 {
+                eprintln!("[ERROR] Failed to set AF mode. Error code: 0x{:X}", result);
+            } else {
+                println!("[LOG] AF mode set to OneShot successfully.");
+            }
+
+            Ok(())
+        }
+    }
+
+    fn setup_event_handlers(&mut self) -> Result<(), u32> {
+        unsafe {
+            // Устанавливаем обработчик событий объектов (для создания фото)
+            if EdsSetObjectEventHandler(
+                self.camera_ref, 
+                0x00000200, // kEdsObjectEvent_All
+                Camera::handle_object_event, 
+                self as *const _ as *mut EdsVoid
+            ) != 0 {
+                eprintln!("[ERROR] Failed to set object event handler.");
+                return Err(1);
+            }
+
+            // Устанавливаем обработчик событий свойств
+            if EdsSetPropertyEventHandler(
+                self.camera_ref, 
+                0x00000100, // kEdsPropertyEvent_All
+                Camera::handle_property_event, 
+                std::ptr::null_mut()
+            ) != 0 {
+                eprintln!("[ERROR] Failed to set property event handler.");
+                return Err(2);
+            }
+
+            // Устанавливаем обработчик событий состояния камеры
+            if EdsSetCameraStateEventHandler(
+                self.camera_ref, 
+                0x00000300, // kEdsStateEvent_All
+                Camera::handle_state_event, 
+                self as *const _ as *mut EdsVoid
+            ) != 0 {
+                eprintln!("[ERROR] Failed to set camera state event handler.");
+                return Err(3);
+            }
+
+            println!("[LOG] Event handlers set successfully.");
+            Ok(())
+        }
+    }
+
+    fn perform_autofocus(&mut self) -> Result<(), u32> {
+        unsafe {
+            // Выполняем автофокус
+            let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00010003);
+            if result != 0 {
+                eprintln!("[ERROR] Failed to perform autofocus. Error code: 0x{:X}", result);
+                return Err(result);
+            }
+
+            // Ждем завершения автофокуса
+            thread::sleep(Duration::from_millis(500));
+            println!("[LOG] Autofocus completed.");
+            Ok(())
         }
     }
 
@@ -257,183 +381,89 @@ impl Camera {
     extern "C" fn handle_state_event(event: EdsStateEvent, _param: EdsUInt32, context: *mut EdsVoid) -> EdsError {
         println!("[LOG] State event triggered: 0x{:X}", event);
         match event {
-            0x00000301 => {
+            0x00000301 => { // kEdsStateEvent_Shutdown
                 let camera = unsafe { &mut *(context as *mut Camera) };
-                unsafe {
-                    EdsRelease(camera.camera_ref);
-                    EdsCloseSession(camera.camera_ref);
-                    EdsTerminateSDK();
-                }
-                // unsafe {
-                //     EdsRelease(camera.camera_ref);
-                //     EdsTerminateSDK();
-                // }
+                println!("[INFO] Camera shutdown event received.");
+                // Камера выключается, помечаем сессию как закрытую
+                camera.session_open = false;
             }
-            0x00000305 => {
-                    // let camera = unsafe { &mut *(context as *mut Camera) };
-                    // unsafe {
-                    //     EdsRelease(camera.camera_ref);
-                    //     EdsCloseSession(camera.camera_ref);
-                    //     EdsTerminateSDK();
-                    // }
-                    println!("[INFO] Camera disconnected.");
-                    // let camera_new = Camera::new().unwrap();
-                    // let mut camera_lock = camera_new.lock().unwrap();
-                    // let _ = camera_lock.capture_photo();
-                    // println!("[INFO] Camera connected.");
+            0x00000305 => { // kEdsStateEvent_WillSoonShutDown
+                println!("[INFO] Camera will soon shutdown.");
+            }
+            0x00000306 => { // kEdsStateEvent_ShutDown
+                let camera = unsafe { &mut *(context as *mut Camera) };
+                println!("[INFO] Camera shutdown completed.");
+                camera.session_open = false;
             }
             _ => {
-                // println!("[LOG] State event triggered: 0x{:X}", event);
+                println!("[LOG] Unhandled state event: 0x{:X}", event);
             }
         }
-        // println!("[LOG] State event triggered: 0x{:X}", event);
-
         0
     }
 
-    fn capture_photo(&mut self) -> Result<(), u32> {
+        fn capture_photo(&mut self) -> Result<(), u32> {
         unsafe {
-            
-    
-            // Установка обработчиков событий
-            self.stop_live_view().unwrap();
-            
-            if EdsSetObjectEventHandler(self.camera_ref, 0x00000200, Camera::handle_object_event, self as *const _ as *mut EdsVoid) != 0 {
-                eprintln!("[ERROR] Failed to set object event handler.");
-                // return Err(1);
+            // Сбрасываем флаг создания фото
+            {
+                let mut photo_created = self.photo_created.lock().unwrap();
+                *photo_created = false;
             }
-            if EdsSetPropertyEventHandler(self.camera_ref, 0x00000100, Camera::handle_property_event, std::ptr::null_mut()) != 0 {
-                eprintln!("[ERROR] Failed to set property event handler.");
-                // return Err(2);
-            }
-            if EdsSetCameraStateEventHandler(self.camera_ref, 0x00000300, Camera::handle_state_event, self as *const _ as *mut EdsVoid) != 0 {
-                eprintln!("[ERROR] Failed to set camera state event handler.");
-                // return Err(3);
-            }
-            // println!("[LOG] Event handlers set successfully.");
 
-            // Установка цели сохранения
-            
-            // println!("[LOG] Capacity set successfully.");
-            // let mut save_target: u32 = 0;
-            // let mut err = EdsGetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-            // if save_target != 2 {
-            //     save_target |= 2;
-            //     err = EdsSetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-            // }
-            // Отправка команды на съемку
-            // thread::sleep(Duration::from_millis(100));
-            // let result = EdsSendCommand(self.camera_ref, 0x00000000, 0x00000000);
-            // if result != 0 {
-            //     // eprintln!("[ERROR] Failed to send capture command (1). Error code: 0x{:X}", result);
-            //     return Err(result);
-            // }
+            // Останавливаем live view перед съемкой
+            self.stop_live_view()?;
 
-            let max_retries = 10; // Максимальное количество попыток
+            // Выполняем автофокус
+            self.perform_autofocus()?;
+
+            // Отправляем команду на съемку
+            let max_retries = 5;
             let mut attempts = 0;
+            let mut success = false;
 
-            while attempts < max_retries {
-                let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00010003);
+            while attempts < max_retries && !success {
+                let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
                 if result == 0 {
-                    let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
-                    println!("[INFO] Capture command sent successfully.{}", result);
-                    break; // Успешное выполнение команды — выходим из цикла
+                    println!("[INFO] Capture command sent successfully.");
+                    success = true;
                 } else {
-
                     eprintln!("[ERROR] Failed to send capture command (attempt {}). Error code: 0x{:X}", attempts + 1, result);
-
-                    if result == 0x8D07 {
-                        let mut save_target: u32 = 2;
-                        // let mut save_target: u32 = 0;
-                        // let mut err = EdsGetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-                        // if save_target != 2 {
-                        //     save_target |= 2;
-                        //     err = EdsSetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-                        // }
-
-                        let result = EdsSetPropertyData(
-                            self.camera_ref,
-                            0x0000000b,
-                            0,
-                            4,
-                            &mut save_target as *mut _ as *mut c_void,
-                        );
-                        if result != 0 {
-                            eprintln!("[ERROR] Failed to set save target. Error code: 0x{:X}", result);
-                        }
-                        
-                        let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
-                        if result == 0 {
-                            break;
-                            // println!("Nice ");
-                        }
-                    } else if result == 0x00000081 {
+                    
+                    if result == 0x8D07 { // kEdsError_DeviceBusy
+                        thread::sleep(Duration::from_millis(200));
+                    } else if result == 0x00000081 { // kEdsError_DeviceBusy
                         eprintln!("[ERROR] Device is busy. Retrying...");
-                    } else {
-                        eprintln!("[ERROR] Failed to send capture command (attempt {}). Error code: 0x{:X}", attempts + 1, result);
+                        thread::sleep(Duration::from_millis(500));
                     }
-                    let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
-                    if result == 0 {
-                        break;
-                        // println!("Nice ");
-                    }
+                    
                     attempts += 1;
-
-                    // Здесь можно добавить задержку перед следующей попыткой, если нужно
-                    std::thread::sleep(std::time::Duration::from_millis(200)); // Задержка 500 мс
                 }
             }
 
-            if attempts == max_retries {
-                eprintln!("[ERROR] All attempts to send capture command failed.");
-                // return Err(1); // Возвращаем ошибку после всех попыток
+            if !success {
+                return Err(1);
             }
 
-            println!("[LOG] Photo capture commands sent successfully.");
+            // Ожидаем завершения создания фотографии с таймаутом
+            let start_time = Instant::now();
+            let timeout = Duration::from_secs(10);
 
-            // Ожидаем завершения создания фотографии
-            loop {
+            while start_time.elapsed() < timeout {
                 {
                     let mut photo_created = self.photo_created.lock().unwrap();
                     if *photo_created {
                         *photo_created = false;
-                        break; // Выходим из цикла, если фото создано
+                        println!("[LOG] Photo captured successfully.");
+                        return Ok(());
                     }
                 }
-            
-                EdsGetEvent();  // Запрашиваем события камеры
-                thread::sleep(Duration::from_millis(100)); // Даем камере время на обработку
-            
-                println!("[LOG] Waiting for photo creation...");
+                
+                EdsGetEvent(); // Запрашиваем события камеры
+                thread::sleep(Duration::from_millis(100));
             }
-            
-            // let (look, cvar) = &*self.photo_created;
-            // let mut photo_created = look.lock().unwrap();
 
-            // loop {
-            //     // Проверяем событие камеры
-            //     EdsGetEvent();
-            //     println!("[LOG] Waiting for photo creation...");
-
-            //     // Пробуем подождать, но если таймаут — продолжаем цикл
-            //     let result = cvar.wait_timeout(photo_created, Duration::from_millis(200)).unwrap();
-            //     photo_created = result.0;
-
-            //     // Если фото создано — выходим
-            //     if *photo_created {
-            //         break;
-            //     }
-            // }
-
-
-            
-
-            println!("[LOG] Photo captured successfully.");
-                // drop(photo_created); // Drop the immutable borrow before calling the mutable borrow
-
-            // drop(photo_created); // Drop the immutable borrow before calling the mutable borrow
-            // self.start_live_view().unwrap();
-            Ok(())
+            eprintln!("[ERROR] Photo capture timeout.");
+            Err(2)
         }
     }
 
@@ -771,9 +801,19 @@ impl Camera {
 impl Drop for Camera {
     fn drop(&mut self) {
         unsafe {
-            EdsCloseSession(self.camera_ref);
-            EdsRelease(self.camera_ref);
+            // Закрываем сессию перед освобождением ресурсов
+            if self.session_open {
+                let _ = self.close_session();
+            }
+            
+            // Освобождаем ссылку на камеру
+            if !self.camera_ref.is_null() {
+                EdsRelease(self.camera_ref);
+            }
+            
+            // Завершаем работу SDK
             EdsTerminateSDK();
+            println!("[LOG] Camera resources cleaned up successfully.");
         }
     }
 }
@@ -964,12 +1004,52 @@ fn stop_live_view(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> R
 fn end_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
     let mut camera = state.lock().unwrap();
     if let Some(camera) = camera.as_ref() {
-        camera.lock().unwrap().stop_live_view()
-            .map_err(|e| format!("Failed to start live view: Error code {}", e))?;
+        let mut camera_lock = camera.lock().unwrap();
+        // Останавливаем live view
+        let _ = camera_lock.stop_live_view();
+        // Закрываем сессию
+        camera_lock.close_session()
+            .map_err(|e| format!("Failed to close session: Error code {}", e))?;
     }
     if let Some(camera) = camera.take() {
         drop(camera);
-        Ok("Camera released successfully".into())
+        Ok("Camera session closed and resources released successfully".into())
+    } else {
+        Err("Camera is not initialized".into())
+    }
+}
+
+#[tauri::command]
+fn open_camera_session(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+    let camera = state.lock().unwrap();
+    if let Some(camera) = camera.as_ref() {
+        camera.lock().unwrap().open_session()
+            .map_err(|e| format!("Failed to open session: Error code {}", e))?;
+        Ok("Camera session opened successfully".into())
+    } else {
+        Err("Camera is not initialized".into())
+    }
+}
+
+#[tauri::command]
+fn close_camera_session(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+    let camera = state.lock().unwrap();
+    if let Some(camera) = camera.as_ref() {
+        camera.lock().unwrap().close_session()
+            .map_err(|e| format!("Failed to close session: Error code {}", e))?;
+        Ok("Camera session closed successfully".into())
+    } else {
+        Err("Camera is not initialized".into())
+    }
+}
+
+#[tauri::command]
+fn perform_autofocus_command(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+    let camera = state.lock().unwrap();
+    if let Some(camera) = camera.as_ref() {
+        camera.lock().unwrap().perform_autofocus()
+            .map_err(|e| format!("Failed to perform autofocus: Error code {}", e))?;
+        Ok("Autofocus completed successfully".into())
     } else {
         Err("Camera is not initialized".into())
     }
@@ -1352,7 +1432,7 @@ async fn main() {
             get_printers_info, get_projects, select_project, delete_project, load_project_name,
             saving_printer_data,
             update_selected_printer,
-            end_camera, save_settings,
+            end_camera, open_camera_session, close_camera_session, perform_autofocus_command, save_settings,
             printer_information,
             printer_settings,
             printer_status,
