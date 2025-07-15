@@ -160,16 +160,18 @@ export default function CaptureScreen({ onCapture }) {
         return [r, g, b];
     };
 
+    let errorCount = 0;
     useEffect(() => {
-        if (!camera.isLiveView) return;
-
         const interval = setInterval(async () => {
             try {
+                if (!camera.isLiveView) {
+                    await invoke('start_live_view');
+                    setCamera({ isLiveView: true });
+                };
                 const base64Image = await invoke('download_ev_image_command');
-                processVideoFrames(base64Image, 0);
+                processVideoFrames(base64Image);
             } catch (err) {
                 console.error('Ошибка загрузки кадра:', err);
-                // toast.error('Проверьте камеру');
             }
         }, 100);
 
@@ -181,7 +183,7 @@ export default function CaptureScreen({ onCapture }) {
     // Функция для захвата фото через Tauri
     const capture = useCallback(async () => {
         try {
-            const capture = await invoke("capture_photo_as");
+            const capture = await invoke("capture_photo_as", { autofocusEnabled: camera.toggleAutofocus });
 
             
             invoke('get_captured_image').then((image) => {
@@ -249,8 +251,8 @@ export default function CaptureScreen({ onCapture }) {
             // setCamera({ isCameraOn: false });
 
             invoke('stop_live_view').then(() => {
-                navigate('/print');
                 setCamera({ isLiveView: false });
+                navigate('/print');
             });
         }
     }, [capturedImage, images, navigate, onCapture, startCountdown, imagesLenght]);
@@ -312,6 +314,8 @@ export default function CaptureScreen({ onCapture }) {
         // 2. Получаем целевой номер, соответствующий images.count
         const targetNumber = uniqueSortedNumbers[images.length];
 
+        console.log('Target number:', targetNumber);
+
         if (targetNumber === undefined) return; // если изображение лишнее — игнорируем
 
         // 3. Вставляем снимок во все объекты с этим номером
@@ -334,9 +338,35 @@ export default function CaptureScreen({ onCapture }) {
               }, 50); // Задержка в 50 миллисекунд (можно варьировать)
               // Очистка таймера, если компонент размонтируется
             const imageData = canvas.toDataURL('image/png');
-            return () => clearTimeout(timeoutId);
+            return () => {
+                clearTimeout(timeoutId);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.width = 0;
+                canvas.height = 0;
+        };
         }
     }, [images]);
+
+    useEffect(() => {
+        return () => {
+            const mainCanvas = canvasRefMain.current;
+            const bgCanvas = backgroundImageRef.current;
+
+            if (mainCanvas) {
+                const ctx = mainCanvas.getContext("2d");
+                ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+                mainCanvas.width = 0;
+                mainCanvas.height = 0;
+            }
+
+            if (bgCanvas) {
+                const ctx = bgCanvas.getContext("2d");
+                ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+                bgCanvas.width = 0;
+                bgCanvas.height = 0;
+            }
+        };
+    }, []);
 
     const handleBack = async () => {
         // Очищаем интервал, если он существует
@@ -346,10 +376,10 @@ export default function CaptureScreen({ onCapture }) {
         }
         setImages([]);
         garbedCanvas(currentCanvas);
-        navigate('/template');
         switchCanvas(1);
         await invoke('stop_live_view');
         setCamera({ isLiveView: false });
+        navigate('/template');
     }
 
     return (

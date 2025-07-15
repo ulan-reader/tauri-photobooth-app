@@ -67,25 +67,36 @@ export default function PrintPage({ images, design, setDesign }) {
       // Очистка таймера, если компонент размонтируется
       const imageData = canvas.toDataURL('image/png');
       setIsImage(imageData);
-      return () => clearTimeout(timeoutId);
-
+      return () => {
+        clearTimeout(timeoutId);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = 0;
+        canvas.height = 0;
+        garbedCanvas(currentCanvas);
+      };
     }
   }, [images, design]);
 
   const garbedCanvas = (currentCanvas) => {
+    // const uniqueSortedNumbers = Array.from(
+    //       new Set(
+    //           currentCanvas.objects
+    //               .filter(obj => obj.type === 'image')
+    //               .map(obj => obj.numberImage)
+    //       )
+    //   ).sort((a, b) => a - b);
+
+    //   // 2. Получаем целевой номер, соответствующий images.count
+    //   const targetNumber = uniqueSortedNumbers[images.length];
+    //   console.log('Target number:', targetNumber);
+
+    //   if (targetNumber === undefined) return;
+      
     currentCanvas.objects.forEach(object => {
-      if (object.type === 'image') {
-          if (object.numberImage === 1) {
-            updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-          }
-          if (object.numberImage === 2) {
-            updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-          }
-          if (object.numberImage === 3) {
-            updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-          }
-        }
-    })
+      if (object.type === 'image' && object.numberImage) {
+          updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
+      }
+    });
   }
 
   const handlePrint = async () => {

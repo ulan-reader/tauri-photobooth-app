@@ -130,6 +130,7 @@ struct Camera {
     camera_ref: *mut c_void,
     is_live_view_started: bool,
     photo_created: Arc<Mutex<bool>>,
+    auto_focus_enabled: bool,
 }
 
 
@@ -225,6 +226,7 @@ impl Camera {
                 camera_ref: camera_ref_in,
                 is_live_view_started: false,
                 photo_created: Arc::new(Mutex::new(false)),
+                auto_focus_enabled: false, // По умолчанию автофокус выключен
                 // photo_created: Arc::new((Mutex::new(false), Condvar::new())),
             }));
 
@@ -291,7 +293,7 @@ impl Camera {
         0
     }
 
-    fn capture_photo(&mut self) -> Result<(), u32> {
+    fn capture_photo(&mut self, autofocus_enabled: bool) -> Result<(), u32> {
         unsafe {
             
     
@@ -333,7 +335,12 @@ impl Camera {
             let mut attempts = 0;
 
             while attempts < max_retries {
-                let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00010003);
+                let focus_command = if autofocus_enabled {
+                    0x00000003 // Автофокус
+                } else {
+                    0x00010003 // Без автофокуса
+                };
+                let result = EdsSendCommand(self.camera_ref, 0x00000004, focus_command);
                 if result == 0 {
                     let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
                     println!("[INFO] Capture command sent successfully.{}", result);
@@ -473,7 +480,7 @@ impl Camera {
             // Скачиваем изображение в поток
             let err = EdsDownload(directory_item, dir_item_info.size, stream);
             if err != 0 {
-                // println!("[ERROR] Failed to download image: 0x{:X}", err);
+                println!("[ERROR] Failed to download image: 0x{:X}", err);
                 EdsRelease(stream);
                 // return Err(err);
             }
@@ -482,7 +489,7 @@ impl Camera {
             // Завершаем скачивание
             let err = EdsDownloadComplete(directory_item);
             if err != 0 {
-                // eprintln!("[ERROR] Failed to complete download: 0x{:X}", err);
+                println!("[ERROR] Failed to complete download: 0x{:X}", err);
                 EdsRelease(stream);
                 // return Err(err);
             }
@@ -822,11 +829,11 @@ fn initialize_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>,) 
 
 // Tauri command for capturing a photo
 #[tauri::command]
-fn capture_photo_as(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+fn capture_photo_as(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>, autofocus_enabled: bool) -> Result<String, String> {
     let state_lock = state.lock().unwrap();
     if let Some(camera) = &*state_lock {
         let mut camera_lock = camera.lock().unwrap();
-        match camera_lock.capture_photo() {
+        match camera_lock.capture_photo(autofocus_enabled) {
             Ok(_) => Ok("Photo captured successfully".into()),
             Err(err) => Err(format!("Failed to capture photo: Error code {}", err)),
         }

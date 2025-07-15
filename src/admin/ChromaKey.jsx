@@ -195,6 +195,14 @@ export default function Chromakey() {
             console.error('Ошибка загрузки фона:', err);
         }
     };
+    const toggleAutofocus = async () => {
+        try {
+            setCamera({ toggleAutofocus: !camera.toggleAutofocus });
+        } catch (err) {
+            console.error('Ошибка установки автофокуса:', err);
+        }
+    }
+    
     
 
     return (
@@ -212,7 +220,7 @@ export default function Chromakey() {
                             className="rounded-lg border flex justify-center items-center cursor-pointer col-span-2 w-fit h-fit"
                             style={{ overflow: 'hidden', background: '#f3f3f3' }}
                         >
-                            <label style={{ width: '370px', height: '370px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <label style={{ width: '370px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                 {chromokey.backgroundImage.src ? (
                                     <img
                                         className="object-cover w-full h-full"
@@ -264,6 +272,19 @@ export default function Chromakey() {
                             type='checkbox'
                             checked={camera.payment_enabled ?? false}
                             onChange={(e) => setCamera({ payment_enabled: e.target.checked })}
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                    </div>
+                    <div className='flex gap-4 items-center justify-start flex-row' >
+
+                        {camera.toggleAutofocus ?
+                        (<span className=''>Автофокус выключен</span>
+                        ) : 
+                        (<span className=''>Автофокус включен</span>)
+                        }
+                        <input
+                            type='checkbox'
+                            checked={!(camera.toggleAutofocus)}
+                            onChange={toggleAutofocus}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
                     </div>
                     <div className="flex justify-between">
