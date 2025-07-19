@@ -335,12 +335,22 @@ impl Camera {
             let mut attempts = 0;
 
             while attempts < max_retries {
-                let focus_command = if autofocus_enabled {
-                    0x00000003 // Автофокус
+                let mut result;
+                if autofocus_enabled {
+                    println!("[LOG] Auto focus enabled.");
+
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000001); // Halfway
+                    if result != 0 {
+                        eprintln!("[ERROR] Failed to activate autofocus (Halfway). Error: 0x{:X}", result);
+                        attempts += 1;
+                        continue;
+                    }
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000003); // Автофокус
                 } else {
-                    0x00010003 // Без автофокуса
+                    println!("[LOG] Auto focus disabled.");
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00010003); // Без автофокуса
                 };
-                let result = EdsSendCommand(self.camera_ref, 0x00000004, focus_command);
+                
                 if result == 0 {
                     let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
                     println!("[INFO] Capture command sent successfully.{}", result);
@@ -351,12 +361,6 @@ impl Camera {
 
                     if result == 0x8D07 {
                         let mut save_target: u32 = 2;
-                        // let mut save_target: u32 = 0;
-                        // let mut err = EdsGetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-                        // if save_target != 2 {
-                        //     save_target |= 2;
-                        //     err = EdsSetPropertyData(self.camera_ref, 0x0000000b, 0, 4, &save_target as *const _ as *mut c_void);
-                        // }
 
                         let result = EdsSetPropertyData(
                             self.camera_ref,

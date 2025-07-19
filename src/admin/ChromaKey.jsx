@@ -277,13 +277,13 @@ export default function Chromakey() {
                     <div className='flex gap-4 items-center justify-start flex-row' >
 
                         {camera.toggleAutofocus ?
-                        (<span className=''>Автофокус выключен</span>
+                        (<span className=''>Автофокус включен</span>
                         ) : 
-                        (<span className=''>Автофокус включен</span>)
+                        (<span className=''>Автофокус выключен</span>)
                         }
                         <input
                             type='checkbox'
-                            checked={!(camera.toggleAutofocus)}
+                            checked={camera.toggleAutofocus}
                             onChange={toggleAutofocus}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
                     </div>
