@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { emit } from '@tauri-apps/api/event';
 import AdminShell from "../components/AdminShell";
@@ -483,7 +483,6 @@ export default function Editor({ isDarkMode }) {
                 <input value={whyBg} className='mt-4 -ml-3 h-8 border border-gray-300 dark:border-gray-600 rounded-md w-11 pl-4 bg-white' disabled/>
                 </div>
             </div>
-            <ToastContainer />
         </AdminShell>
     );
 }

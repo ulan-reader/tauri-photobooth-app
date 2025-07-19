@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Printer, ArrowLeft } from "lucide-react"
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke } from '@tauri-apps/api';
-import { toast, ToastContainer } from 'react-toastify';
 import AdminShell from '../components/AdminShell';
 
 const props = {
@@ -157,8 +156,6 @@ export default function PrinterInfo({ isDarkMode, setShowPopup, setLoading, show
                 Назад к настройкам
                 </Link>
             </div>
-
-            <ToastContainer />
         </AdminShell>
     )
 }

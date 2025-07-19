@@ -1,11 +1,11 @@
-import React, { Children, useCallback, useEffect, useState } from 'react';
+import React, { Children, useCallback, useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 // import MainPage from './admin/TemplateEditor.jsx';
-import MainPage from './pages/MainPage.jsx';
+const MainPage = lazy(() => import('./pages/MainPage.jsx'));
 // import MainPage from './ChromaKeyTest.jsx';
-import TemplatePage from './pages/TemplatePage.jsx';
-import CapturePage from './pages/CapturePage.jsx';
-import PrintPage from './pages/PrintPage.jsx';
+const TemplatePage = lazy(() => import('./pages/TemplatePage.jsx'));
+const CapturePage = lazy(() => import('./pages/CapturePage.jsx'));
+const PrintPage = lazy(() => import('./pages/PrintPage.jsx'));
 
 import Settings from './admin/Settings.jsx';
 import Touchscreen from './admin/TouchScreen.jsx';
@@ -22,6 +22,10 @@ import { useStore } from './admin/store.js';
 import { invoke } from '@tauri-apps/api/tauri';
 import PaymentPage from './pages/PaymentPage.jsx';
 import PaymentFailed from './pages/PaymentFailed.jsx';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// const CheckLicense = lazy(() => import('./components/CheckLicense.jsx'));
 
 export function CheckLicense({ children }) {
   const { license } = useStore();
@@ -58,37 +62,40 @@ export default function App(){
   return (
         <>
           <Router>
-            <Routes>
-              <Route path="/license" element={<CheckLicensePage />} /> 
-              <Route 
-                  path="/*"
-                  element={
-                    <CheckLicense>
-                      <>
-                        <Routes>
-                          <Route path="/" element={<MainPage active={showPopup} setLoading={setLoading} loading={loading} setActive={setShowPopup} design={design}/>}/>
-                          <Route path="/template" element={<TemplatePage design={design} setDesign={setDesign} />} />
-                          <Route path="/payment" element={<PaymentPage />} />
-                          <Route path="/payment-failed" element={<PaymentFailed />} />
-                          <Route path="/capture" element={<CapturePage onCapture={setImages}/>} />
-                          <Route path="/print" element={<PrintPage design={design} images={images} onPrint={() => {}} setDesign={setDesign} />} />
-                          <Route path="/list" element={<ListPage />} />
+            <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-2xl">Загрузка...</div>}>
+              <Routes>
+                <Route path="/license" element={<CheckLicensePage />} /> 
+                <Route 
+                    path="/*"
+                    element={
+                      <CheckLicense>
+                        <>
+                          <Routes>
+                            <Route path="/" element={<MainPage active={showPopup} setLoading={setLoading} loading={loading} setActive={setShowPopup} design={design}/>}/>
+                            <Route path="/template" element={<TemplatePage design={design} setDesign={setDesign} />} />
+                            <Route path="/payment" element={<PaymentPage />} />
+                            <Route path="/payment-failed" element={<PaymentFailed />} />
+                            <Route path="/capture" element={<CapturePage onCapture={setImages}/>} />
+                            <Route path="/print" element={<PrintPage design={design} images={images} onPrint={() => {}} setDesign={setDesign} />} />
+                            <Route path="/list" element={<ListPage />} />
 
-                          <Route path="/settings" element={<Settings isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
-                          <Route path="/settings/touchscreen" element={<Touchscreen isDarkMode={isDarkMode} />} />
-                          <Route path="/settings/printer" element={<PrinterInfo isDarkMode={isDarkMode} setShowPopup={setShowPopup} setLoading={setLoading} showPopup={showPopup}/>} />
-                          <Route path="/settings/timer" element={<Timer />} />
-                          <Route path="/settings/editor" element={<Editor isDarkMode={isDarkMode}/>} />
-                          <Route path="/settings/template-editor" element={<TemplateEditor isDarkMode={isDarkMode} />} />
-                          <Route path="/settings/chromakey" element={<Chromakey />} />
-                        </Routes>
-                        {showPopup && <PrinterPopup  onClose={() => setShowPopup(false)} loading={loading}/>}
+                            <Route path="/settings" element={<Settings isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
+                            <Route path="/settings/touchscreen" element={<Touchscreen isDarkMode={isDarkMode} />} />
+                            <Route path="/settings/printer" element={<PrinterInfo isDarkMode={isDarkMode} setShowPopup={setShowPopup} setLoading={setLoading} showPopup={showPopup}/>} />
+                            <Route path="/settings/timer" element={<Timer />} />
+                            <Route path="/settings/editor" element={<Editor isDarkMode={isDarkMode}/>} />
+                            <Route path="/settings/template-editor" element={<TemplateEditor isDarkMode={isDarkMode} />} />
+                            <Route path="/settings/chromakey" element={<Chromakey />} />
+                          </Routes>
+                          {showPopup && <PrinterPopup  onClose={() => setShowPopup(false)} loading={loading}/>}
 
-                      </>
-                    </CheckLicense>
-                  }
-              />
-            </Routes>
+                          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+                        </>
+                      </CheckLicense>
+                    }
+                />
+              </Routes>
+            </Suspense>
           </Router>
         </>
       )

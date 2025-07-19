@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import back_img from "../assets/defaultImage_2.png";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { invoke } from "@tauri-apps/api"
 
 const DEVICE_IP = '192.168.1.1';
@@ -76,7 +76,6 @@ export default function PaymentFailed() {
                     </div>
                 </div>
             </div>
-            <ToastContainer/>
         </div>
     );
 }

@@ -5,7 +5,6 @@ import { invoke } from '@tauri-apps/api/tauri';
 import licenseCheckIcon from '../assets/license-check.png';
 import verifyLicenseIcon from '../assets/verify-license.png';
 import changeLicenseIcon from '../assets/change-license.png';
-import { toast, ToastContainer } from 'react-toastify';
 
 
 export default function CheckLicensePage() {
@@ -109,7 +108,6 @@ export default function CheckLicensePage() {
                     {loadingCheck ? 'Загрузка...' : 'Проверить лицензию'}
                 </button>
             </div>
-            <ToastContainer />
         </div>
     )
 }

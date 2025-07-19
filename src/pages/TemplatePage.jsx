@@ -6,7 +6,6 @@ import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import back_img from '../assets/defaultImage.jpeg';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri"
 import { useStore } from '../admin/store.js';
-import { toast, ToastContainer } from 'react-toastify';
 
 export default function TemplatePage({ design, setDesign }) {
     // const [bgImage, setBgImage] = useState(localStorage.getItem("back_2") || `url(${back_img})`);
@@ -169,7 +168,6 @@ export default function TemplatePage({ design, setDesign }) {
                     </div>
                 </div>
             </div>
-            <ToastContainer />
         </div>
     );
 };

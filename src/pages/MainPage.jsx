@@ -2,7 +2,7 @@ import { Link, NavLink, resolvePath, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from 'react';
 import '../App.css';
 import main_icon from '../assets/main_camera_icon.png';
-import { toast,ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri";
 import { listen } from "@tauri-apps/api/event";
@@ -10,7 +10,6 @@ import { useStore } from "../admin/store";
 // import ChromakeyTest from "../ChromaKeyTest";
 // import image_beta from '../image_beta/IMG_6700.JPG'
 import { saveCanvasData, saveCanvasImage, saveCanvasTemplate } from "../utils/canvasUtils";
-import { drawMyCanvas } from "../components/CanvasDrawer";
 import { Settings } from "lucide-react"
 import { set } from "lodash";
 import printer from "../assets/printer.png";
@@ -178,7 +177,6 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                 </div>
                 ) }
             </div>
-            <ToastContainer />
         </div>
     )
 }

@@ -4,7 +4,7 @@ import { Clock, ArrowLeft } from "lucide-react";
 import Switch from 'react-switch';
 import '../App.css'
 import { invoke } from "@tauri-apps/api/tauri";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import AdminShell from "../components/AdminShell";
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
@@ -289,7 +289,6 @@ export default function Timer() {
                     </div>
                 </div>
                 </div>
-            <ToastContainer />
         </AdminShell>
     )
 }

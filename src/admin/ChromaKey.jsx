@@ -6,7 +6,6 @@ import backgroundUrl from "../assets/defaultImage.jpeg";
 import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
 import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import { drawCromakeyBackgroundImage } from '../components/CanvasDrawer.jsx'
 
 const props = { page: 'Chromakey', type: 'chromakey' };
 
@@ -21,18 +20,6 @@ export default function Chromakey() {
     useEffect(() => {
         updateSettings();
     }, []);
-
-    useEffect(() => {
-        if (!chromokey.backgroundImage.src) return;
-
-        const bgCanvas = backgroundImageRef.current;
-        const bgCtx = bgCanvas.getContext("2d");
-        bgCanvas.width = 530;
-        bgCanvas.height = 530;
-        drawCromakeyBackgroundImage(bgCtx, bgCanvas, chromokey.backgroundImage, true)
-
-        // backgr.onerror = (err) => console.error('Ошибка загрузки фона:', err);
-    }, [chromokey.backgroundImage]);
 
     const processVideoFrames = useCallback((base64Image) => {
         const canvas = canvasRef.current;
@@ -226,7 +213,7 @@ export default function Chromakey() {
                                     type="file" 
                                     accept="image/*" 
                                     onChange={handleBackgroundChange} 
-                                    className="hidden" // Скрываем input
+                                    className="hidden dark:bg-gray-800 dark:text-white dark:border-gray-600" // Скрываем input, но для темной темы добавляем классы
                                 />
                             </label>
                         </div>
@@ -238,6 +225,7 @@ export default function Chromakey() {
                             id="chromakey-color"
                             value={chromokey.color} 
                             onChange={(e) => { setChromokey({ color: e.target.value }) }}
+                            className="w-12 h-12 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800 dark:text-white"
                         />
                     </div>
                     <div className='flex gap-4 items-center justify-start flex-row' >

@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api";
 import React, { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
 
 export default function PrinterPopup({ onClose, loading }) {
     const [printers, setPrinters] = useState([]);
@@ -38,7 +37,6 @@ export default function PrinterPopup({ onClose, loading }) {
             ({ ...p, is_used: p.id === printer.id })
         ));
         setSelectedPrinter({ ...printer, is_used: true });
-        toast.success(`Принтер ${printer.name} выбран с id ${printer.id}`);
     };
 
     return (

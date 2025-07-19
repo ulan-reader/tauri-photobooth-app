@@ -9,25 +9,107 @@ import cameraCapture from '../assets/cameraCapture.png';
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import back_img from '../assets/defaultImage.jpeg';  // ПОМЕНЯТЬ НА СВОЙ ФОН
 import { useStore } from '../admin/store.js';
-import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
-
-// import test_image_1 from '../image_beta/IMG_6700.JPG';
-// import test_image_2 from '../image_beta/IMG_7107.JPG';
-// import test_image_3 from '../image_beta/IMG_7111.JPG';
-
-// import test_image_1 from '../image_beta/image.png';
-// import test_image_2 from '../image_beta/image_2.png';
-// import test_image_3 from '../image_beta/image.png';
-
-
+import KonvaCanvas from '../components/KonvaCanvas';
 import { toast } from 'react-toastify';
 // import RemoveBackground from '../ChromaKeyTest.jsx';
 // import * as bodyPix from "@tensorflow-models/body-pix";
 // import "@tensorflow/tfjs";
 
+export const drawCromakeyBackgroundImage = (ctx, obj, chromokeyBackgroundImage, drawImage) => {
+    if (!chromokeyBackgroundImage || !chromokeyBackgroundImage.imgObject) {
+        chromokeyBackgroundImage.imgObject = new Image();
+        chromokeyBackgroundImage.imgObject.crossOrigin = "anonymous";
+        chromokeyBackgroundImage.imgObject.src = chromokeyBackgroundImage.src;
+    }
+
+    if (drawImage) {
+        const draw = () => {
+            const imgAspectRatio = chromokeyBackgroundImage.imgObject.width / chromokeyBackgroundImage.imgObject.height;
+            const objectAspectRatio = obj.width / obj.height;
+            let drawWidth, drawHeight, offsetX, offsetY;
+            // Рассчитываем размеры и смещение для "object-cover"
+            if (imgAspectRatio > objectAspectRatio) {
+                // Изображение шире объекта
+                drawWidth = obj.height * imgAspectRatio;
+                drawHeight = obj.height;
+                offsetX = -(drawWidth - obj.width) / 2;
+                offsetY = 0;
+            } else {
+                // Изображение выше объекта
+                drawWidth = obj.width;
+                drawHeight = obj.width / imgAspectRatio;
+                offsetX = 0;
+                offsetY = -(drawHeight - obj.height) / 2;
+            }
+            // Рисуем изображение с обрезкой
+            ctx.save(); // Сохраняем текущий контекст
+            ctx.translate(obj.x, obj.y); // Перемещаемся в позицию объекта
+            ctx.beginPath();
+            // ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height); // Ограничиваем область
+            // ctx.clip(); // Применяем обрезку
+            ctx.drawImage(
+                chromokeyBackgroundImage.imgObject,
+                offsetX,
+                offsetY,
+                drawWidth,
+                drawHeight
+            );
+            ctx.restore();
+        }
+        if (!chromokeyBackgroundImage.imgObject.complete) {
+            chromokeyBackgroundImage.imgObject.crossOrigin = "anonymous";
+            chromokeyBackgroundImage.imgObject.onload = draw;
+        } else {
+            draw();
+        }
+    } 
+    if (!drawImage) {
+        const draw = () => {
+            const imgAspectRatio = chromokeyBackgroundImage.imgObject.width / chromokeyBackgroundImage.imgObject.height;
+            const objectAspectRatio = obj.width / obj.height;
+            let drawWidth, drawHeight, offsetX, offsetY;
+            // Рассчитываем размеры и смещение для "object-cover"
+            if (imgAspectRatio > objectAspectRatio) {
+                // Изображение шире объекта
+                drawWidth = obj.height * imgAspectRatio;
+                drawHeight = obj.height;
+                offsetX = -(drawWidth - obj.width) / 2;
+                offsetY = 0;
+            } else {
+                // Изображение выше объекта
+                drawWidth = obj.width;
+                drawHeight = obj.width / imgAspectRatio;
+                offsetX = 0;
+                offsetY = -(drawHeight - obj.height) / 2;
+            }
+            // Рисуем изображение с обрезкой
+            ctx.save(); // Сохраняем текущий контекст
+            ctx.translate(obj.x, obj.y); // Перемещаемся в позицию объекта
+            ctx.beginPath();
+            ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height); // Ограничиваем область
+            ctx.clip(); // Применяем обрезку
+            ctx.drawImage(
+                chromokeyBackgroundImage.imgObject,
+                offsetX - obj.width / 2,
+                offsetY - obj.height / 2,
+                drawWidth,
+                drawHeight
+            );
+            ctx.restore();
+        }
+        if (!chromokeyBackgroundImage.imgObject.complete) {
+            chromokeyBackgroundImage.imgObject.crossOrigin = "anonymous";
+            chromokeyBackgroundImage.imgObject.onload = draw;
+        } else {
+            draw();
+        }
+    };
+
+};
+
 export default function CaptureScreen({ onCapture }) {
     // const [bgImage, setBgImage] = useState(localStorage.getItem("back_3") || `url(${back_img})`);
-    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3 } = useStore();
+    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3, reference } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
     // const imagesLenght = currentCanvas.objects.filter(object => object.type === 'image' && object.src === '').reduce((max, obj) => Math.max(max, obj.numberImage), 0);
     usePageNavigation();
@@ -185,6 +267,7 @@ export default function CaptureScreen({ onCapture }) {
 
             
             invoke('get_captured_image').then((image) => {
+                // setCapturedImage(`data:image/jpeg;base64,${image}`)
                 processVideoFrames(`data:image/jpeg;base64,${image}`, 1);
             });
             setCamera({ isLiveView: false });
@@ -223,7 +306,6 @@ export default function CaptureScreen({ onCapture }) {
 
     // Сохранение фото
     const savePhoto = useCallback( async () => {
-        // startLiveView();
         setIsButtonDisabled(true);
         setTimeout(() => setIsButtonDisabled(false), (camera.counterCapturePhoto || 3) + 1000);
 
@@ -233,21 +315,15 @@ export default function CaptureScreen({ onCapture }) {
             url: capturedImage
         };
         setImages(prevImages => [...prevImages, newImage]);
-
+        
         if (images.length + 1 < imagesLenght) {
-            
             invoke('start_live_view').then(() => {
                 setCamera({ isLiveView: true });
                 setCapturedImage(null);
-    
                 startCountdown();
             });
         } else {
             onCapture([...images, newImage]);
-
-            // await invoke('end_camera');
-            // setCamera({ isCameraOn: false });
-
             invoke('stop_live_view').then(() => {
                 navigate('/print');
                 setCamera({ isLiveView: false });
@@ -273,9 +349,12 @@ export default function CaptureScreen({ onCapture }) {
         clearedNumbers.clear(); // очищаем set перед новым проходом
         garbedCanvas(currentCanvas);
     }
+
+
     useEffect(() => {
         if (!isImageCounted) first_counter();
-        updateImageCapture();
+        console.log(images)
+        console.log(canvases)
         drawBackImage();
     }, [capturedImage]);
 
@@ -295,33 +374,24 @@ export default function CaptureScreen({ onCapture }) {
     }
 
     const updateImageCapture = useCallback(() => {
-        const canvas = canvasRefLayout.current;
-        if (!canvas || !currentCanvas) return;
-
-        const ctx = canvas.getContext('2d');
-
-        // 1. Получаем уникальные номера numberImage по возрастанию
-        const uniqueSortedNumbers = Array.from(
-            new Set(
-                currentCanvas.objects
-                    .filter(obj => obj.type === 'image' && obj.numberImage != null)
-                    .map(obj => obj.numberImage)
-            )
-        ).sort((a, b) => a - b);
-
-        // 2. Получаем целевой номер, соответствующий images.count
-        const targetNumber = uniqueSortedNumbers[images.length];
-
-        if (targetNumber === undefined) return; // если изображение лишнее — игнорируем
-
-        // 3. Вставляем снимок во все объекты с этим номером
+        if (!currentCanvas) return;
+        // Для каждого фото в images ищем все объекты с соответствующим numberImage
+        images.forEach((img, idx) => {
+            const targetNumber = idx + 1;
+            currentCanvas.objects.forEach(object => {
+                if (object.type === 'image' && object.numberImage === targetNumber) {
+                    updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: img.url });
+                }
+            });
+        });
+        // Если объектов больше, чем фото — очищаем лишние слоты
+        const maxNumber = images.length;
         currentCanvas.objects.forEach(object => {
-            if (object.type === 'image' && object.numberImage === targetNumber) {
+            if (object.type === 'image' && object.numberImage > maxNumber) {
                 updateObjectProps(currentCanvasId, object.id, { imgObject: null, src: '' });
-                updateObjectProps(currentCanvasId, object.id, { src: capturedImage });
             }
         });
-    }, [capturedImage, images.length]);
+    }, [images, currentCanvas, currentCanvasId, updateObjectProps]);
 
 
     useEffect(() => {
@@ -352,13 +422,48 @@ export default function CaptureScreen({ onCapture }) {
         setCamera({ isLiveView: false });
     }
 
+    // Масштаб предпросмотра макета
+    const maxPreviewWidth = 500;
+    const maxPreviewHeight = 700;
+    const canvasWidth = currentCanvas?.canvasProps?.width || 1200;
+    const canvasHeight = currentCanvas?.canvasProps?.height || 1800;
+    const scale = Math.min(
+        maxPreviewWidth / canvasWidth,
+        maxPreviewHeight / canvasHeight,
+        1
+    );
+    const previewWidth = Math.round(canvasWidth * scale);
+    const previewHeight = Math.round(canvasHeight * scale);
+
+    // Добавить useEffect для обновления image-слотов после изменения images
+    useEffect(() => {
+        updateImageCapture();
+    }, [images]);
+
     return (
         <div className="flex justify-center items-center">
             <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{ width: '1280px', height: '1024px', backgroundImage: background_image_3 }}>
                 <div className='back-img'></div>
                 <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
                     <div className='flex w-screen justify-center items-center'>
-                        <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px', transform: 'scaleX(-1)' }} className='absolute top-64 left-7'/>
+                    {/* <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px', transform: 'scaleX(-1)' }} /> */}
+                        <div style={{ width: previewWidth, height: previewHeight }} className='absolute top-64 left-7'>
+                            <KonvaCanvas
+                                width={canvasWidth}
+                                height={canvasHeight}
+                                scale={scale}
+                                objects={currentCanvas.objects}
+                                selectedId={null}
+                                onSelect={() => {}}
+                                onChange={() => {}}
+                                onStageClick={() => {}}
+                                backgroundColor={currentCanvas?.canvasProps?.backgroundColor}
+                                chromokey={chromokey}
+                                reference={reference}
+                                showDottedLine={currentCanvas?.canvasProps?.dottedLine}
+                                editable={false}
+                            />
+                        </div>
                         <div className='flex flex-col gap-6 items-center px-20 w-full absolute'>
                             <div className='text-5xl items-center text-center -top-5 stroke'>
                                 ЧТОБЫ СОЗДАТЬ ФОТО, <br /> НАЖМИТЕ НА КНОПКУ ПОД РАМКОЙ

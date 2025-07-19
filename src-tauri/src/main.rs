@@ -291,10 +291,12 @@ impl Camera {
                 4,
                 &mut af_mode_setting as *mut _ as *mut c_void,
             );
-            if result != 0 {
+            if result != 0 && result != 0x50 { // Игнорируем EDS_ERR_PROPERTY_NOT_SUPPORTED
                 eprintln!("[ERROR] Failed to set AF mode. Error code: 0x{:X}", result);
-            } else {
+            } else if result == 0 {
                 println!("[LOG] AF mode set to OneShot successfully.");
+            } else {
+                println!("[LOG] AF mode setting not supported by this camera (normal).");
             }
 
             Ok(())
@@ -357,6 +359,46 @@ impl Camera {
         }
     }
 
+    fn check_camera_connection(&mut self) -> bool {
+        unsafe {
+            // Проверяем, что камера все еще доступна
+            if self.camera_ref.is_null() {
+                return false;
+            }
+
+            // Пробуем получить простое свойство камеры
+            let mut device: u32 = 0;
+            let err = EdsGetPropertyData(
+                self.camera_ref,
+                0x00000500, // kEdsPropID_Evf_OutputDevice
+                0,
+                std::mem::size_of::<u32>() as u32,
+                &mut device as *mut _ as *mut c_void,
+            );
+
+            err == 0
+        }
+    }
+
+    fn wait_for_camera_ready(&mut self) -> Result<(), u32> {
+        let max_attempts = 10;
+        let mut attempts = 0;
+
+        while attempts < max_attempts {
+            if self.check_camera_connection() {
+                println!("[LOG] Camera is ready.");
+                return Ok(());
+            }
+
+            println!("[LOG] Waiting for camera to be ready... (attempt {}/{})", attempts + 1, max_attempts);
+            thread::sleep(Duration::from_millis(500));
+            attempts += 1;
+        }
+
+        eprintln!("[ERROR] Camera not ready after {} attempts.", max_attempts);
+        Err(1)
+    }
+
     extern "C" fn handle_object_event( event: EdsObjectEvent, object: EdsBaseRef, context: *mut EdsVoid) -> EdsError {
         println!("[LOG] Object event triggered: 0x{:X}", event);
         if event == 0x00000208 {
@@ -379,30 +421,39 @@ impl Camera {
     }
 
     extern "C" fn handle_state_event(event: EdsStateEvent, _param: EdsUInt32, context: *mut EdsVoid) -> EdsError {
-        println!("[LOG] State event triggered: 0x{:X}", event);
         match event {
             0x00000301 => { // kEdsStateEvent_Shutdown
                 let camera = unsafe { &mut *(context as *mut Camera) };
-                println!("[INFO] Camera shutdown event received.");
-                // Камера выключается, помечаем сессию как закрытую
-                camera.session_open = false;
+                println!("[INFO] Camera shutdown event received - this is normal during capture.");
+                // НЕ помечаем сессию как закрытую при съемке
+                // camera.session_open = false;
+            }
+            0x00000302 => { // kEdsStateEvent_JobStatusChanged
+                // Игнорируем - это нормальное событие при съемке
             }
             0x00000305 => { // kEdsStateEvent_WillSoonShutDown
-                println!("[INFO] Camera will soon shutdown.");
+                println!("[INFO] Camera will soon shutdown - this may be normal during capture.");
             }
             0x00000306 => { // kEdsStateEvent_ShutDown
                 let camera = unsafe { &mut *(context as *mut Camera) };
-                println!("[INFO] Camera shutdown completed.");
-                camera.session_open = false;
+                println!("[INFO] Camera shutdown completed - this may be normal during capture.");
+                // НЕ помечаем сессию как закрытую при съемке
+                // camera.session_open = false;
+            }
+            0x00000307 => { // kEdsStateEvent_RequestTransfer
+                println!("[INFO] Camera requests transfer - this is normal during capture.");
             }
             _ => {
-                println!("[LOG] Unhandled state event: 0x{:X}", event);
+                // Логируем только неизвестные события
+                if event != 0x00000302 { // Игнорируем JobStatusChanged
+                    println!("[LOG] Unhandled state event: 0x{:X}", event);
+                }
             }
         }
         0
     }
 
-        fn capture_photo(&mut self) -> Result<(), u32> {
+    fn capture_photo(&mut self) -> Result<(), u32> {
         unsafe {
             // Сбрасываем флаг создания фото
             {
@@ -412,6 +463,9 @@ impl Camera {
 
             // Останавливаем live view перед съемкой
             self.stop_live_view()?;
+
+            // Проверяем, что камера готова к съемке
+            self.wait_for_camera_ready()?;
 
             // Выполняем автофокус
             self.perform_autofocus()?;
@@ -446,16 +500,27 @@ impl Camera {
 
             // Ожидаем завершения создания фотографии с таймаутом
             let start_time = Instant::now();
-            let timeout = Duration::from_secs(10);
+            let timeout = Duration::from_secs(15); // Увеличиваем таймаут
 
             while start_time.elapsed() < timeout {
-                {
+                let photo_captured = {
                     let mut photo_created = self.photo_created.lock().unwrap();
                     if *photo_created {
                         *photo_created = false;
-                        println!("[LOG] Photo captured successfully.");
-                        return Ok(());
+                        true
+                    } else {
+                        false
                     }
+                };
+                
+                if photo_captured {
+                    println!("[LOG] Photo captured successfully.");
+                    
+                    // Ждем, пока камера снова станет доступной после съемки
+                    thread::sleep(Duration::from_millis(1000));
+                    let _ = self.wait_for_camera_ready();
+                    
+                    return Ok(());
                 }
                 
                 EdsGetEvent(); // Запрашиваем события камеры
@@ -541,14 +606,22 @@ impl Camera {
 
     fn start_live_view(&mut self) -> Result<(), u32> {
         unsafe {
+            // Проверяем, что камера доступна
+            if !self.check_camera_connection() {
+                eprintln!("[ERROR] Camera not available for live view.");
+                return Err(1);
+            }
+
             let mut device: u32 = 0;
             let err = EdsGetPropertyData(self.camera_ref, 0x00000500, 0, size_of::<u32>() as u32, &mut device as *mut _ as *mut c_void);
             
             if err != 0 {
+                eprintln!("[ERROR] Failed to get output device: 0x{:X}", err);
                 return Err(err);
             }
     
             if device & 2 != 0 {  // Проверяем бит 2, а не всё число
+                println!("[LOG] Live view already active.");
                 return Ok(());
             }
     
@@ -556,6 +629,7 @@ impl Camera {
     
             let err = EdsSetPropertyData(self.camera_ref, 0x00000500, 0, size_of::<u32>() as u32, &mut device as *mut _ as *mut c_void);
             if err != 0 {
+                eprintln!("[ERROR] Failed to set output device: 0x{:X}", err);
                 return Err(err);
             }
     
@@ -569,50 +643,57 @@ impl Camera {
     
 
     fn stop_live_view(&mut self) -> Result<(), u32> {
-            unsafe {
-                let mut device: u32 = 0;
-                let err = EdsGetPropertyData(
-                    self.camera_ref,
-                    0x00000500,
-                    0,
-                    size_of::<u32>() as u32,
-                    &mut device as *mut _ as *mut c_void,
-                );
-                // println!("device: {}", device);
-                // println!("err: {}", err);
-                if err != 0 {
-                    println!("Ошибка получения устройства вывода: {}", err);
-                    return Err(err);
+        unsafe {
+            // Проверяем, что камера доступна
+            if !self.check_camera_connection() {
+                println!("[WARNING] Camera not available, skipping live view stop.");
+                self.is_live_view_started = false;
+                return Ok(());
+            }
+
+            let mut device: u32 = 0;
+            let err = EdsGetPropertyData(
+                self.camera_ref,
+                0x00000500,
+                0,
+                size_of::<u32>() as u32,
+                &mut device as *mut _ as *mut c_void,
+            );
+            
+            if err != 0 {
+                // Не выводим ошибку, если камера временно недоступна
+                if err != 2 { // EDS_ERR_DEVICE_NOT_FOUND
+                    eprintln!("[ERROR] Failed to get output device: 0x{:X}", err);
                 }
+                self.is_live_view_started = false;
+                return Ok(());
+            }
     
-                // Проверка, активно ли устройство вывода для живого просмотра
-                if device & 2 != 0 {
-                    // Отключаем вывод на компьютер (удаляем бит)
-                    device &= !2;
+            // Проверка, активно ли устройство вывода для живого просмотра
+            if device & 2 != 0 {
+                // Отключаем вывод на компьютер (удаляем бит)
+                device &= !2;
     
-                    // Устанавливаем новое значение для устройства вывода
-                    let err = EdsSetPropertyData(
-                        self.camera_ref,
-                        0x00000500, // kEdsPropID_Evf_OutputDevice
-                        0,
-                        std::mem::size_of::<u32>() as u32,
-                        &device as *const _ as *const c_void,
-                    );
+                // Устанавливаем новое значение для устройства вывода
+                let err = EdsSetPropertyData(
+                    self.camera_ref,
+                    0x00000500, // kEdsPropID_Evf_OutputDevice
+                    0,
+                    std::mem::size_of::<u32>() as u32,
+                    &device as *const _ as *const c_void,
+                );
     
-                    if err != 0 {
-                        // println!("Failed to disable live view output device: {}", err);
-                        return Err(err);
+                if err != 0 {
+                    if err != 2 { // EDS_ERR_DEVICE_NOT_FOUND
+                        eprintln!("[ERROR] Failed to disable live view output device: 0x{:X}", err);
                     }
                 }
-    
-                // self.is_live_view_started = false;
-                // println!("Live View отключен.");
             }
-            // Обновляем флаг состояния живого просмотра
-           
-            self.is_live_view_started = false;
-            println!("Live view stopped.");
-            Ok(())
+        }
+        
+        self.is_live_view_started = false;
+        println!("Live view stopped.");
+        Ok(())
     }
 
     // fn stop_live_view(&mut self) -> Result<(), u32> {
@@ -795,7 +876,6 @@ impl Camera {
             Ok(result)
         }
     }
-
 }
 
 impl Drop for Camera {
@@ -1050,6 +1130,33 @@ fn perform_autofocus_command(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>
         camera.lock().unwrap().perform_autofocus()
             .map_err(|e| format!("Failed to perform autofocus: Error code {}", e))?;
         Ok("Autofocus completed successfully".into())
+    } else {
+        Err("Camera is not initialized".into())
+    }
+}
+
+#[tauri::command]
+fn check_camera_status(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+    let camera = state.lock().unwrap();
+    if let Some(camera) = camera.as_ref() {
+        let mut camera_lock = camera.lock().unwrap();
+        if camera_lock.check_camera_connection() {
+            Ok("Camera is connected and ready".into())
+        } else {
+            Ok("Camera is not available".into())
+        }
+    } else {
+        Err("Camera is not initialized".into())
+    }
+}
+
+#[tauri::command]
+fn wait_for_camera_ready_command(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+    let camera = state.lock().unwrap();
+    if let Some(camera) = camera.as_ref() {
+        camera.lock().unwrap().wait_for_camera_ready()
+            .map_err(|e| format!("Failed to wait for camera: Error code {}", e))?;
+        Ok("Camera is ready".into())
     } else {
         Err("Camera is not initialized".into())
     }
@@ -1432,7 +1539,7 @@ async fn main() {
             get_printers_info, get_projects, select_project, delete_project, load_project_name,
             saving_printer_data,
             update_selected_printer,
-            end_camera, open_camera_session, close_camera_session, perform_autofocus_command, save_settings,
+            end_camera, open_camera_session, close_camera_session, perform_autofocus_command, check_camera_status, wait_for_camera_ready_command, save_settings,
             printer_information,
             printer_settings,
             printer_status,

@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api"
 import { convertFileSrc } from "@tauri-apps/api/tauri";
 import back_img from "../assets/defaultImage_2.png";
 import { useStore } from "../admin/store";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
 import kaspi_img from '../assets/kaspi_1.jpg';
@@ -299,7 +299,6 @@ export default function PaymentPage() {
                     )}
                 </div>
             </div>
-            <ToastContainer position="bottom-center" />
         </div>
     );
 }

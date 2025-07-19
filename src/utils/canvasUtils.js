@@ -14,10 +14,8 @@ export async function saveCanvasData(canvasId, canvasData) {
     }
 }
 
-export async function saveCanvasImage(canvasId, canvasData, canvasRef) {
+export async function saveCanvasImage(canvasId, canvasData, imageDataUrl) {
     try {
-        const imageDataUrl = canvasRef.current.toDataURL('image/png');
-
         // Убираем префикс data:image/png;base64, чтобы передать только base64
         const imageBase64 = imageDataUrl.replace(/^data:image\/(png|jpg);base64,/, '');
 
