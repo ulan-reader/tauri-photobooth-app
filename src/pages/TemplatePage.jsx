@@ -10,7 +10,7 @@ import { useStore } from '../admin/store.js';
 export default function TemplatePage({ design, setDesign }) {
     // const [bgImage, setBgImage] = useState(localStorage.getItem("back_2") || `url(${back_img})`);
     const { canvases, switchCanvas, currentCanvasId, camera, setCamera, background_image_2 } = useStore();
-    const availableCanvases = canvases.filter((canvas) => canvas.canvasProps.available === true);
+    const availableCanvases = canvases.filter((canvas) => canvas?.canvasProps?.available === true);
     const navigate = useNavigate();
     usePageNavigation();
 
@@ -108,19 +108,19 @@ export default function TemplatePage({ design, setDesign }) {
                                     // Галерея изображений
                                     <div className='absolute bottom-1 left-0 w-full h-full flex gap-6 justify-center items-center z-10'>
                                         <img
-                                            src={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.webpData}
-                                            alt={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.name}
+                                            src={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.webpData}
+                                            alt={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.name}
                                             className="w-64 max-h-96 opacity-50 cursor-pointer"
                                             onClick={prevSlide}
                                         />
                                         <img
-                                            src={availableCanvases[currentIndex].canvasProps.webpData}
-                                            alt={availableCanvases[currentIndex].canvasProps.name}
+                                            src={availableCanvases[currentIndex]?.canvasProps?.webpData}
+                                            alt={availableCanvases[currentIndex]?.canvasProps?.name}
                                             className="w-80 h-112 cursor-pointer border-4 border-blue-500"
                                         />
                                         <img
-                                            src={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length].canvasProps.webpData}
-                                            alt={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length].canvasProps.name}
+                                            src={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.webpData}
+                                            alt={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.name}
                                             className="w-64 max-h-96 opacity-50 cursor-pointer"
                                             onClick={nextSlide}
                                         />
@@ -129,8 +129,8 @@ export default function TemplatePage({ design, setDesign }) {
                                     // Только одно изображение
                                     <div className="absolute bottom-1 left-0 w-full h-full flex justify-center items-center z-10">
                                         <img
-                                            src={availableCanvases[0].canvasProps.webpData}
-                                            alt={availableCanvases[0].canvasProps.name}
+                                            src={availableCanvases[0]?.canvasProps?.webpData}
+                                            alt={availableCanvases[0]?.canvasProps?.name}
                                             className="w-80 h-112 cursor-pointer border-4 border-blue-500"
                                         />
                                     </div>

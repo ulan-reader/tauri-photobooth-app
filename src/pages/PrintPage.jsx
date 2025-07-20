@@ -74,10 +74,15 @@ export default function PrintPage({ images, design, setDesign }) {
   }
 
   // Масштаб предпросмотра
-  const maxPreviewWidth = 400;
-  const maxPreviewHeight = 600;
-  const canvasWidth = currentCanvas?.canvasProps?.width || 1200;
-  const canvasHeight = currentCanvas?.canvasProps?.height || 1800;
+  const maxPreviewWidth = 350;
+  const maxPreviewHeight = 475;
+  let canvasWidth = currentCanvas?.canvasProps?.width || 1200;
+  let canvasHeight = currentCanvas?.canvasProps?.height || 1800;
+  // Ограничение минимального и максимального размера холста
+  if (canvasWidth > 2000) canvasWidth = 2000;
+  if (canvasHeight > 2000) canvasHeight = 2000;
+  if (canvasWidth < 200) canvasWidth = 200;
+  if (canvasHeight < 200) canvasHeight = 200;
   const scale = Math.min(
     maxPreviewWidth / canvasWidth,
     maxPreviewHeight / canvasHeight,

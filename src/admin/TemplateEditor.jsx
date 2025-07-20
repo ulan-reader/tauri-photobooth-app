@@ -164,8 +164,8 @@ export default function TemplateEditor() {
                         imgObject: img,
                         left: 0,
                         top: 0,
-                        width: currentCanvas.canvasProps.width,
-                        height: currentCanvas.canvasProps.height,
+                        width: img.width,
+                        height: img.height,
                         zIndex: 2,
                         rotate: 0,
                         opacity: 1
@@ -175,7 +175,7 @@ export default function TemplateEditor() {
                     addObject(currentCanvasId, newImage);
                 };
             };
-            toast.success("Доавлен шаблон на весь экран");
+            toast.success("Добавлен шаблон на весь экран (оригинальный размер)");
             reader.readAsDataURL(file);
         }
     };
@@ -395,7 +395,7 @@ export default function TemplateEditor() {
                             </div>
                         </div>
                     )}
-                    <div style={{width: previewWidth, height: previewHeight, overflow: 'hidden'}}>
+                    <div style={{width: currentCanvas?.canvasProps?.width > currentCanvas?.canvasProps?.height ? previewWidth : previewHeight, height: currentCanvas?.canvasProps?.width > currentCanvas?.canvasProps?.height ? previewWidth : previewHeight, overflow: 'hidden'}}>
                         <div className="flex justify-between items-center mb-4">
                             <KonvaCanvas
                                 width={canvasWidth}
@@ -521,7 +521,7 @@ export default function TemplateEditor() {
                                         <p>Шаблоны</p>
                                         <div className='flex flex-col overflow-auto min-h-24 max-h-48 gap-1 border rounded-md bg-gray-150 p-1'>
                                             {canvases.map((canvas) => (
-                                                <button key={canvas.id} onClick={() => switchCanvas(canvas.id)} className={currentCanvas.id === canvas.id ? 'bg-blue-500 text-white rounded-md ' : 'flex justify-start'}>{canvas.canvasProps.name}</button>
+                                                <button key={canvas.id} onClick={() => switchCanvas(canvas.id)} className={currentCanvas?.id === canvas.id ? 'bg-blue-500 text-white rounded-md ' : 'flex justify-start'}>{canvas?.canvasProps?.name}</button>
                                             ))}
                                         </div>
                                         <div className="border-t border-gray-300 my-2"></div>
@@ -556,8 +556,8 @@ export default function TemplateEditor() {
                                                     min={200}
                                                     max={1800}
                                                     type='number'
-                                                    onChange={(e) => setCanvasProps(currentCanvas.id, { width: e.target.value })}
-                                                    value={currentCanvas.canvasProps.width}
+                                                    onChange={(e) => setCanvasProps(currentCanvas?.id, { width: e.target.value })}
+                                                    value={currentCanvas?.canvasProps?.width}
                                                     className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800 dark:text-white'/>
                                             </div>
                                             <div className='flex gap-2 items-center justify-center'>
@@ -567,7 +567,7 @@ export default function TemplateEditor() {
                                                     max={1800}
                                                     type='number'
                                                     onChange={(e) => setCanvasProps(currentCanvas.id, { height: e.target.value })}
-                                                    value={currentCanvas.canvasProps.height}
+                                                    value={currentCanvas?.canvasProps?.height}
                                                     className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800 dark:text-white'/>
                                             </div>
                                             <div className='flex gap-5 items-center  col-span-3'>
