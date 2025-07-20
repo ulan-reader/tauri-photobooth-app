@@ -253,14 +253,14 @@ export default function Chromakey() {
                             onChange={(e) => setChromokey({ printer_visible: e.target.checked })}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
                     </div>
-                    <div className='flex gap-4 items-center justify-start flex-row' >
+                    {/* <div className='flex gap-4 items-center justify-start flex-row' >
                         <span className=''>Сделать активным способ оплаты</span>
                         <input
                             type='checkbox'
                             checked={camera.payment_enabled ?? false}
                             onChange={(e) => setCamera({ payment_enabled: e.target.checked })}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
-                    </div>
+                    </div> */}
                     <div className='flex gap-4 items-center justify-start flex-row' >
 
                         {camera.toggleAutofocus ?

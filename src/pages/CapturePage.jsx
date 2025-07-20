@@ -470,10 +470,12 @@ export default function CaptureScreen({ onCapture }) {
                                 onChange={() => {}}
                                 onStageClick={() => {}}
                                 backgroundColor={currentCanvas?.canvasProps?.backgroundColor}
-                                chromokey={chromokey}
+                                chromokey={true}
                                 reference={reference}
                                 showDottedLine={currentCanvas?.canvasProps?.dottedLine}
-                                editable={false}
+                                editable={false}                                
+                                forceReferenceVisible={true} // 🔥 ДОБАВЛЕНО
+                                hideNumbers={false}          // 🔒 НЕ скрываем номера, если они нужны
                             />
                         </div>
                         <div className='flex flex-col gap-6 items-center px-20 w-full absolute'>

@@ -30,6 +30,7 @@ export default function TemplateEditor() {
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [canvasTemplateName, setCanvasTemplateName] = useState('');
     const canvasTemplate = JSON.parse(localStorage.getItem('canvasTemplates'));
+    const [isSavingPreview, setIsSavingPreview] = useState(false);
 
     useEffect(() => {
         if (showTemplateModel) {
@@ -321,21 +322,27 @@ export default function TemplateEditor() {
     async function handleSaveCanvas() {
         try {
             await saveCanvasData(currentCanvas.id, currentCanvas, currentCanvas.canvasProps.available);
+        
+            setIsSavingPreview(true);
+            await new Promise((res) => setTimeout(res, 100)); // дать времени обновиться
+        
             let dataUrl = '';
             if (stageRef.current) {
                 dataUrl = stageRef.current.toDataURL();
             }
-            console.log(dataUrl, stageRef)
+        
+            setIsSavingPreview(false);
+        
             if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image')) {
                 await saveCanvasImage(currentCanvas.id, currentCanvas, dataUrl);
                 toast.success('Холст и изображение сохранены!');
             } else {
-                
                 toast.error('Ошибка: не удалось получить изображение холста!');
             }
         } catch (e) {
+            setIsSavingPreview(false);
             toast.error('Ошибка при сохранении холста');
-            console.error(e)
+            console.error(e);
         }
     }
 
@@ -412,6 +419,8 @@ export default function TemplateEditor() {
                                 showDottedLine={currentCanvas?.canvasProps?.dottedLine}
                                 ref={stageRef}
                                 editable={true}
+                                hideNumbers={isSavingPreview}
+                                forceReferenceVisible={isSavingPreview}
                             />
                         </div>
                     </div>
