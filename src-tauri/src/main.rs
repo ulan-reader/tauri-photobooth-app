@@ -453,7 +453,7 @@ impl Camera {
         0
     }
 
-    fn capture_photo(&mut self) -> Result<(), u32> {
+    fn capture_photo(&mut self, autofocus_enabled: bool) -> Result<(), u32> {
         unsafe {
             // Сбрасываем флаг создания фото
             {
@@ -476,10 +476,26 @@ impl Camera {
             let mut success = false;
 
             while attempts < max_retries && !success {
-                let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
+                let mut result;
+                if autofocus_enabled {
+                    println!("[LOG] Auto focus enabled.");
+
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000001); // Halfway
+                    if result != 0 {
+                        eprintln!("[ERROR] Failed to activate autofocus (Halfway). Error: 0x{:X}", result);
+                        attempts += 1;
+                        continue;
+                    }
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000003); // Автофокус
+                } else {
+                    println!("[LOG] Auto focus disabled.");
+                    result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00010003); // Без автофокуса
+                };
+                
                 if result == 0 {
-                    println!("[INFO] Capture command sent successfully.");
-                    success = true;
+                    let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
+                    println!("[INFO] Capture command sent successfully.{}", result);
+                    break; // Успешное выполнение команды — выходим из цикла
                 } else {
                     eprintln!("[ERROR] Failed to send capture command (attempt {}). Error code: 0x{:X}", attempts + 1, result);
                     
@@ -942,11 +958,11 @@ fn initialize_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>,) 
 
 // Tauri command for capturing a photo
 #[tauri::command]
-fn capture_photo_as(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
+fn capture_photo_as(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>, autofocus_enabled: bool) -> Result<String, String> {
     let state_lock = state.lock().unwrap();
     if let Some(camera) = &*state_lock {
         let mut camera_lock = camera.lock().unwrap();
-        match camera_lock.capture_photo() {
+        match camera_lock.capture_photo(autofocus_enabled) {
             Ok(_) => Ok("Photo captured successfully".into()),
             Err(err) => Err(format!("Failed to capture photo: Error code {}", err)),
         }

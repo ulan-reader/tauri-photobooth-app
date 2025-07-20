@@ -263,7 +263,7 @@ export default function CaptureScreen({ onCapture }) {
     // Функция для захвата фото через Tauri
     const capture = useCallback(async () => {
         try {
-            const capture = await invoke("capture_photo_as");
+            const capture = await invoke("capture_photo_as", { autofocusEnabled: camera.toggleAutofocus });
 
             
             invoke('get_captured_image').then((image) => {

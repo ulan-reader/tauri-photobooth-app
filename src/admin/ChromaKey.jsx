@@ -152,7 +152,7 @@ export default function Chromakey() {
 
     const saveChanged = async () => {
         try {
-            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled });
+            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled, toggle: camera.toggleAutofocus });
             console.log('Изменения успешно сохранены');
         } catch (err) {
             console.error('Ошибка сохранения фона:', err);
@@ -165,7 +165,7 @@ export default function Chromakey() {
 
             if (settings) {
                 setChromokey({ color: settings.color, isEnabled: settings.is_enabled, printer_visible: settings.printer_visible });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled, toggleAutofocus: settings.toggle_autofocus });
             }
             
             const background = await invoke('get_image_path', { path: `settings/chromokey_image`});
@@ -182,6 +182,13 @@ export default function Chromakey() {
             console.error('Ошибка загрузки фона:', err);
         }
     };
+    const toggleAutofocus = async () => {
+        try {
+            setCamera({ toggleAutofocus: !camera.toggleAutofocus });
+        } catch (err) {
+            console.error('Ошибка установки автофокуса:', err);
+        }
+    }
     
 
     return (
@@ -252,6 +259,19 @@ export default function Chromakey() {
                             type='checkbox'
                             checked={camera.payment_enabled ?? false}
                             onChange={(e) => setCamera({ payment_enabled: e.target.checked })}
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                    </div>
+                    <div className='flex gap-4 items-center justify-start flex-row' >
+
+                        {camera.toggleAutofocus ?
+                        (<span className=''>Автофокус включен</span>
+                        ) : 
+                        (<span className=''>Автофокус выключен</span>)
+                        }
+                        <input
+                            type='checkbox'
+                            checked={camera.toggleAutofocus}
+                            onChange={toggleAutofocus}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
                     </div>
                     <div className="flex justify-between">

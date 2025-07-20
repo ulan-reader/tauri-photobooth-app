@@ -61,7 +61,8 @@ pub struct ChromokeyInfo {
     pub is_enabled: bool,
     pub counter_capture_photo: u32,
     pub printer_visible: bool,
-    pub payment_enabled: bool
+    pub payment_enabled: bool,
+    pub toggle_autofocus: bool
 }
 
 
