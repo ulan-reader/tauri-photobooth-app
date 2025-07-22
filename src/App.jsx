@@ -7,21 +7,19 @@ const TemplatePage = lazy(() => import('./pages/TemplatePage.jsx'));
 const CapturePage = lazy(() => import('./pages/CapturePage.jsx'));
 const PrintPage = lazy(() => import('./pages/PrintPage.jsx'));
 
-import Settings from './admin/Settings.jsx';
-import Touchscreen from './admin/TouchScreen.jsx';
-import PrinterInfo from './admin/Printer.jsx';
-import TemplateEditor from './admin/TemplateEditor.jsx';
-import Timer from './admin/Timer.jsx';
-import Editor from './admin/Editor.jsx';
-import Chromakey from './admin/ChromaKey.jsx';
-import PrinterPopup from './components/PrinterPopup.jsx';
+const Settings = lazy(() => import('./admin/Settings.jsx'));
+const Touchscreen = lazy(() => import('./admin/TouchScreen.jsx'));
+const PrinterInfo = lazy(() => import('./admin/Printer.jsx'));
+const TemplateEditor = lazy(() => import('./admin/TemplateEditor.jsx'));
+const Timer = lazy(() => import('./admin/Timer.jsx'));
+const Editor = lazy(() => import('./admin/Editor.jsx'));
+const Chromakey = lazy(() => import('./admin/ChromaKey.jsx'));
+const PrinterPopup = lazy(() => import('./components/PrinterPopup.jsx'));
 import { usePageNavigation } from './hooks/usePageNavigation.js';
-import ListPage from './pages/ListPage.jsx';
-import CheckLicensePage from './pages/CheckLicensePage.jsx';
+const ListPage = lazy(() => import('./pages/ListPage.jsx'));
+const CheckLicensePage = lazy(() => import('./pages/CheckLicensePage.jsx'));
 import { useStore } from './admin/store.js';
 import { invoke } from '@tauri-apps/api/tauri';
-import PaymentPage from './pages/PaymentPage.jsx';
-import PaymentFailed from './pages/PaymentFailed.jsx';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -62,6 +60,8 @@ export default function App(){
   return (
         <>
           <Router>
+            {showPopup && <PrinterPopup onClose={() => setShowPopup(false)} loading={loading} />}
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
             <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-2xl">Загрузка...</div>}>
               <Routes>
                 <Route path="/license" element={<CheckLicensePage />} /> 
@@ -73,8 +73,6 @@ export default function App(){
                           <Routes>
                             <Route path="/" element={<MainPage active={showPopup} setLoading={setLoading} loading={loading} setActive={setShowPopup} design={design}/>}/>
                             <Route path="/template" element={<TemplatePage design={design} setDesign={setDesign} />} />
-                            <Route path="/payment" element={<PaymentPage />} />
-                            <Route path="/payment-failed" element={<PaymentFailed />} />
                             <Route path="/capture" element={<CapturePage onCapture={setImages}/>} />
                             <Route path="/print" element={<PrintPage design={design} images={images} onPrint={() => {}} setDesign={setDesign} />} />
                             <Route path="/list" element={<ListPage />} />
@@ -87,9 +85,6 @@ export default function App(){
                             <Route path="/settings/template-editor" element={<TemplateEditor isDarkMode={isDarkMode} />} />
                             <Route path="/settings/chromakey" element={<Chromakey />} />
                           </Routes>
-                          {showPopup && <PrinterPopup  onClose={() => setShowPopup(false)} loading={loading}/>}
-
-                          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
                         </>
                       </CheckLicense>
                     }

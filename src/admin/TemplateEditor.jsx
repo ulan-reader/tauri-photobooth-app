@@ -421,6 +421,7 @@ export default function TemplateEditor() {
                                 editable={true}
                                 hideNumbers={isSavingPreview}
                                 forceReferenceVisible={isSavingPreview}
+                                design={true}
                             />
                         </div>
                     </div>

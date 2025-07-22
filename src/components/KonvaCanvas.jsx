@@ -271,6 +271,7 @@ import {
   Text,
 } from 'react-konva';
 import useImage from 'use-image';
+import Konva from 'konva';
 
 // Цвета и контраст
 const numberColors = [
@@ -296,10 +297,23 @@ function getContrastYIQ(hexcolor) {
   return yiq >= 128 ? '#000' : '#fff';
 }
 
-function URLImage({ src, flipX = false, ...props }) {
+function URLImage({ src, flipX = false, design = true, ...props }) {
   const [image] = useImage(src, 'anonymous');
+  const imageRef = useRef();
+
+  useEffect(() => {
+    if (image && imageRef.current) {
+      const node = imageRef.current;
+      node.clearCache();
+      node.cache();
+      node.filters(!design ? [Konva.Filters.Grayscale] : []);
+      node.getLayer()?.batchDraw();
+    }
+  }, [image, design]);
+
   return (
     <KonvaImage
+      ref={imageRef}
       image={image}
       scaleX={flipX ? -1 : 1}
       x={flipX ? (props.x || 0) + (props.width || 0) : props.x}
@@ -310,220 +324,8 @@ function URLImage({ src, flipX = false, ...props }) {
 
 
 
-// const KonvaCanvas = forwardRef(function KonvaCanvas(
-//   {
-//     width,
-//     height,
-//     objects,
-//     selectedId,
-//     onSelect,
-//     onChange,
-//     onStageClick,
-//     backgroundColor = '#222',
-//     chromokey,
-//     reference,
-//     showDottedLine = false,
-//     scale = 1,
-//     editable = true,
-//   },
-//   ref
-// ) {
-//   const trRef = useRef();
-//   const layerRef = useRef();
 
-//   useEffect(() => {
-//     if (trRef.current && selectedId) {
-//       const node = layerRef.current.findOne(`#object-${selectedId}`);
-//       if (node) {
-//         trRef.current.nodes([node]);
-//         trRef.current.getLayer().batchDraw();
-//       }
-//     }
-//   }, [selectedId, objects]);
 
-//   const DottedLines = () => (
-//     <>
-//       <Line
-//         points={[width / 2, 0, width / 2, height]}
-//         stroke="rgba(200,200,200,0.3)"
-//         strokeWidth={2}
-//         dash={[20, 10]}
-//       />
-//       <Line
-//         points={[0, height / 2, width, height / 2]}
-//         stroke="rgba(200,200,200,0.3)"
-//         strokeWidth={2}
-//         dash={[20, 10]}
-//       />
-//     </>
-//   );
-
-//   const sortedObjects = [...objects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-//   return (
-//     <Stage
-//       width={width}
-//       height={height}
-//       onMouseDown={onStageClick}
-//       ref={ref}
-//       style={{
-//         background: backgroundColor,
-//         transform: `scale(${scale})`,
-//         transformOrigin: 'top left',
-//         // borderRadius: 12,
-//         // boxShadow: '0 0 8px #111',
-//         // border: '2px solid #333',
-//       }}
-//     >
-//       <Layer ref={layerRef}>
-//         {/* Фон — фото reference */}
-//         {reference && (
-//           <URLImage src={reference} x={0} y={0} width={width} height={height} />
-//         )}
-
-//         {showDottedLine && <DottedLines />}
-
-//         {sortedObjects.map((obj) => {
-//           const commonProps = {
-//             key: obj.id,
-//             id: `object-${obj.id}`,
-//             x: obj.left,
-//             y: obj.top,
-//             rotation: obj.rotate || 0,
-//             opacity: obj.opacity,
-//             draggable: editable,
-//             onClick: editable ? (e) => { e.cancelBubble = true; onSelect(obj.id); } : undefined,
-//             onTap: editable ? (e) => { e.cancelBubble = true; onSelect(obj.id); } : undefined,
-//             onDragEnd: editable ? (e) => onChange(obj.id, { left: e.target.x(), top: e.target.y() }) : undefined,
-//             onTransformEnd: editable ? (e) => {
-//               const node = e.target;
-//               const scaleX = node.scaleX();
-//               const scaleY = node.scaleY();
-//               node.scaleX(1);
-//               node.scaleY(1);
-//               onChange(obj.id, {
-//                 left: node.x(),
-//                 top: node.y(),
-//                 width: Math.max(5, node.width() * scaleX),
-//                 height: Math.max(5, node.height() * scaleY),
-//                 rotate: node.rotation(),
-//               });
-//             } : undefined,
-//             stroke: obj.stroke || '#444',
-//             strokeWidth: obj.strokeWidth || 2,
-//             shadowColor: obj.shadowColor || '#111',
-//             shadowBlur: obj.shadowBlur || 4,
-//             shadowOffsetX: obj.shadowOffsetX || 0,
-//             shadowOffsetY: obj.shadowOffsetY || 0,
-//             fill: obj.fill || '#333',
-//           };
-
-//           // Цветной номер
-//           if (obj.numberImage >= 1 && obj.numberImage <= 10) {
-//             const color = numberColors[obj.numberImage - 1];
-//             const fontSize = Math.min(obj.width, obj.height) * 0.6;
-//             const textColor = getContrastYIQ(color);
-
-//             return (
-//               <Group {...commonProps} width={obj.width} height={obj.height}>
-//                 <Rect
-//                   width={obj.width}
-//                   height={obj.height}
-//                   fill={color}
-//                   stroke={obj.stroke || '#444'}
-//                   strokeWidth={obj.strokeWidth || 2}
-//                   shadowColor={obj.shadowColor || '#111'}
-//                   shadowBlur={obj.shadowBlur || 4}
-//                   shadowOffsetX={obj.shadowOffsetX || 0}
-//                   shadowOffsetY={obj.shadowOffsetY || 0}
-//                   cornerRadius={10}
-//                 />
-//                 {obj.src ? (
-//                   <URLImage
-//                     src={obj.src}
-//                     x={0}
-//                     y={0}
-//                     width={obj.width}
-//                     height={obj.height}
-//                     flipX={!!obj.flipX}
-//                   />
-//                 ) : (
-//                   <Text
-//                     text={String(obj.numberImage)}
-//                     fontSize={fontSize}
-//                     fill={textColor}
-//                     fontStyle="bold"
-//                     align="center"
-//                     verticalAlign="middle"
-//                     width={obj.width}
-//                     height={obj.height}
-//                     x={0}
-//                     y={0}
-//                   />
-//                 )}
-//               </Group>
-//             );
-//           }
-
-//           // Обычные фигуры
-//           switch (obj.type) {
-//             case 'rectangle':
-//               return <Rect {...commonProps} width={obj.width} height={obj.height} cornerRadius={10} />;
-//             case 'circle':
-//               return <Circle {...commonProps} radius={obj.width / 2} />;
-//             case 'star':
-//               return (
-//                 <Star
-//                   {...commonProps}
-//                   numPoints={obj.spikes || 5}
-//                   innerRadius={obj.width / 4}
-//                   outerRadius={obj.width / 2}
-//                 />
-//               );
-//             case 'polygon':
-//               return <RegularPolygon {...commonProps} sides={obj.sides || 6} radius={obj.width / 2} />;
-//             case 'triangle':
-//               return <RegularPolygon {...commonProps} sides={3} radius={obj.width / 2} />;
-//             case 'line':
-//               return <Line {...commonProps} points={[0, obj.height / 2, obj.width, obj.height / 2]} />;
-//             case 'image':
-//               return (
-//                 <URLImage
-//                   {...commonProps}
-//                   width={obj.width}
-//                   height={obj.height}
-//                   src={obj.src}
-//                   flipX={!!obj.flipX}
-//                 />
-//               );
-//             default:
-//               return null;
-//           }
-//         })}
-
-//         {/* Трансформер */}
-//         {selectedId && editable && (
-//           <Transformer
-//             ref={trRef}
-//             boundBoxFunc={(oldBox, newBox) => {
-//               if (newBox.width < 5 || newBox.height < 5) return oldBox;
-//               return newBox;
-//             }}
-//             rotateEnabled
-//             enabledAnchors={[
-//               'top-left', 'top-right',
-//               'bottom-left', 'bottom-right',
-//               'middle-left', 'middle-right',
-//               'top-center', 'bottom-center',
-//             ]}
-//           />
-//         )}
-//       </Layer>
-//     </Stage>
-//   );
-// });
-
-// export default KonvaCanvas;
 
 const KonvaCanvas = forwardRef(function KonvaCanvas(
   {
@@ -542,6 +344,7 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
     editable = true,
     hideNumbers = false,               // 🔹 новое
     forceReferenceVisible = false,    // 🔹 новое
+    design = true, // 🔹 новое
   },
   ref
 ) {
@@ -562,16 +365,17 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
     <>
       <Line
         points={[width / 2, 0, width / 2, height]}
-        stroke="rgba(200,200,200,0.3)"
-        strokeWidth={2}
-        dash={[20, 10]}
+        stroke="black"
+        strokeWidth={4}
+        dash={[20, 10]} // ← длина штриха и пробела
+        listening={false}
       />
-      <Line
+      {/* <Line
         points={[0, height / 2, width, height / 2]}
-        stroke="rgba(200,200,200,0.3)"
+        stroke="black"
         strokeWidth={2}
-        dash={[20, 10]}
-      />
+        dash={[10, 5]}
+      /> */}
     </>
   );
 
@@ -590,39 +394,43 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
       }}
     >
       <Layer ref={layerRef}>
-        {/* Reference (фон) */}
-        {reference && (
-          <URLImage src={reference?.src} x={0} y={0} width={width} height={height} />
-        )}
-
-        {showDottedLine && <DottedLines />}
+        
 
         {sortedObjects.map((obj) => {
           const commonProps = {
             key: obj.id,
             id: `object-${obj.id}`,
-            x: obj.left,
-            y: obj.top,
+            x: obj.left + obj.width / 2,
+            y: obj.top + obj.height / 2,
+            offsetX: obj.width / 2,
+            offsetY: obj.height / 2,
             rotation: obj.rotate || 0,
             opacity: obj.opacity,
             draggable: editable,
             onClick: editable ? (e) => { e.cancelBubble = true; onSelect(obj.id); } : undefined,
             onTap: editable ? (e) => { e.cancelBubble = true; onSelect(obj.id); } : undefined,
-            onDragEnd: editable ? (e) => onChange(obj.id, { left: e.target.x(), top: e.target.y() }) : undefined,
-            onTransformEnd: editable ? (e) => {
-              const node = e.target;
-              const scaleX = node.scaleX();
-              const scaleY = node.scaleY();
-              node.scaleX(1);
-              node.scaleY(1);
-              onChange(obj.id, {
-                left: node.x(),
-                top: node.y(),
-                width: Math.max(5, node.width() * scaleX),
-                height: Math.max(5, node.height() * scaleY),
-                rotate: node.rotation(),
-              });
-            } : undefined,
+            onDragEnd: editable
+              ? (e) => onChange(obj.id, {
+                  left: e.target.x() - obj.width / 2,
+                  top: e.target.y() - obj.height / 2
+                })
+              : undefined,
+            onTransformEnd: editable
+              ? (e) => {
+                  const node = e.target;
+                  const scaleX = node.scaleX();
+                  const scaleY = node.scaleY();
+                  node.scaleX(1);
+                  node.scaleY(1);
+                  onChange(obj.id, {
+                    left: node.x() - node.offsetX(),
+                    top: node.y() - node.offsetY(),
+                    width: Math.max(5, node.width() * scaleX),
+                    height: Math.max(5, node.height() * scaleY),
+                    rotate: node.rotation(),
+                  });
+                }
+              : undefined,
             stroke: obj.stroke || '#444',
             strokeWidth: obj.strokeWidth || 2,
             shadowColor: obj.shadowColor || '#111',
@@ -651,7 +459,7 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
                   shadowOffsetY={obj.shadowOffsetY || 0}
                   cornerRadius={10}
                 />
-                {reference && forceReferenceVisible ? (
+                {reference && forceReferenceVisible && !obj.src ? (
                   <URLImage
                     src={reference?.src}
                     x={0}
@@ -662,19 +470,17 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
                   />
                 ) : obj.src ? (
                   <URLImage
-                    src={obj.src}
-                    x={0}
+                    src={ obj.src}
+                    x={obj.numberImage ? obj.width : 0}
                     y={0}
                     width={obj.width}
                     height={obj.height}
-                    flipX={!!obj.flipX}
+                    flipX={!obj.flipX}
+                    design={design}
                   />
                 ) : (
                   !hideNumbers && (
-                    <Group
-                      x={obj.flipX ? obj.width : 0}
-                      scaleX={obj.flipX ? -1 : 1}
-                    >
+                    <Group x={obj.flipX ? obj.width : 0} scaleX={obj.flipX ? -1 : 1}>
                       <Text
                         text={String(obj.numberImage)}
                         fontSize={fontSize}
@@ -722,6 +528,7 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
                   height={obj.height}
                   src={obj.src}
                   flipX={!!obj.flipX}
+                  design={design}
                 />
               );
             default:
@@ -745,6 +552,9 @@ const KonvaCanvas = forwardRef(function KonvaCanvas(
             ]}
           />
         )}
+      </Layer>
+      <Layer>
+        {showDottedLine && <DottedLines />}
       </Layer>
     </Stage>
   );

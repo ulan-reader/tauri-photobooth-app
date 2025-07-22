@@ -80,6 +80,17 @@ export default function Chromakey() {
         image.onerror = (err) => console.error('Ошибка загрузки изображения:', err);
     }, [chromokey, camera]);
 
+    useEffect(() => {
+        const bgCanvas = backgroundImageRef.current;
+        const bgCtx = bgCanvas.getContext("2d");
+
+        if (!chromokey.backgroundImage?.imgObject?.complete) return;
+
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        bgCtx.drawImage(chromokey.backgroundImage.imgObject, 0, 0, bgCanvas.width, bgCanvas.height);
+    }, [chromokey.backgroundImage]);
+
+
     const hexToRgb = (hex) => {
         const match = /^#([a-fA-F0-9]{6})$/.exec(hex);
         console.log(match);

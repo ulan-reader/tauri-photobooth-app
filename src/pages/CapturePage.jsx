@@ -20,7 +20,7 @@ export const drawCromakeyBackgroundImage = (ctx, obj, chromokeyBackgroundImage, 
         chromokeyBackgroundImage.imgObject = new Image();
         chromokeyBackgroundImage.imgObject.crossOrigin = "anonymous";
         chromokeyBackgroundImage.imgObject.src = chromokeyBackgroundImage.src;
-    }
+    } else chromokeyBackgroundImage.imgObject.crossOrigin = "anonymous";
 
     if (drawImage) {
         const draw = () => {
@@ -218,15 +218,23 @@ export default function CaptureScreen({ onCapture }) {
                         data[i + 3] = 0; // Убираем пиксели этого цвета (делаем их прозрачными)
                     }
                 }
-
+                drawCromakeyBackgroundImage(ctx, canvas, chromokey.backgroundImage, false); // Сначала фон
                 ctx.putImageData(frame, 0, 0);
             }
         };
         if (test_num){
+            // drawCromakeyBackgroundImage(ctx, canvas, chromokey.backgroundImage, false);
+
             setTimeout(() => {
                 setCapturedImage(canvas.toDataURL("image/png"));
-            }, 50);
+            }, 500);
         }
+        // if (test_num){
+        //     setTimeout(() => {
+        //         // const mergedImage = mergeChromakeyAndPhoto();
+        //         setCapturedImage(mergedImage);
+        //     }, 50);
+        // }
         image.onerror = (err) => console.error('Ошибка загрузки изображения:', err);
     }, [chromokey.isEnabled , chromokey.color]);
 
@@ -423,8 +431,8 @@ export default function CaptureScreen({ onCapture }) {
     }
 
     // Масштаб предпросмотра макета
-    const maxPreviewWidth = 400;
-    const maxPreviewHeight = 600;
+    const maxPreviewWidth = 300;
+    const maxPreviewHeight = 450;
     let canvasWidth = currentCanvas?.canvasProps?.width || 1200;
     let canvasHeight = currentCanvas?.canvasProps?.height || 1800;
     // Ограничение минимального и максимального размера холста

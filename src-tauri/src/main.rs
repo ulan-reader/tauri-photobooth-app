@@ -256,7 +256,7 @@ impl Camera {
             }
 
             // Настраиваем автофокус
-            self.setup_autofocus()?;
+            // self.setup_autofocus()?;
 
             // Устанавливаем обработчики событий
             self.setup_event_handlers()?;
@@ -265,43 +265,43 @@ impl Camera {
         }
     }
 
-    fn setup_autofocus(&mut self) -> Result<(), u32> {
-        unsafe {
-            // Включаем автофокус
-            let mut af_mode: u32 = 0; // kEdsAEMode_Program
-            let result = EdsSetPropertyData(
-                self.camera_ref,
-                0x00000004, // kEdsPropID_AEMode
-                0,
-                4,
-                &mut af_mode as *mut _ as *mut c_void,
-            );
-            if result != 0 {
-                eprintln!("[ERROR] Failed to set AE mode. Error code: 0x{:X}", result);
-            } else {
-                println!("[LOG] AE mode set to Program successfully.");
-            }
+    // fn setup_autofocus(&mut self) -> Result<(), u32> {
+    //     unsafe {
+    //         // Включаем автофокус
+    //         let mut af_mode: u32 = 0; // kEdsAEMode_Program
+    //         let result = EdsSetPropertyData(
+    //             self.camera_ref,
+    //             0x00000004, // kEdsPropID_AEMode
+    //             0,
+    //             4,
+    //             &mut af_mode as *mut _ as *mut c_void,
+    //         );
+    //         if result != 0 {
+    //             eprintln!("[ERROR] Failed to set AE mode. Error code: 0x{:X}", result);
+    //         } else {
+    //             println!("[LOG] AE mode set to Program successfully.");
+    //         }
 
-            // Устанавливаем режим автофокуса
-            let mut af_mode_setting: u32 = 0; // kEdsAFMode_OneShot
-            let result = EdsSetPropertyData(
-                self.camera_ref,
-                0x00000005, // kEdsPropID_AFMode
-                0,
-                4,
-                &mut af_mode_setting as *mut _ as *mut c_void,
-            );
-            if result != 0 && result != 0x50 { // Игнорируем EDS_ERR_PROPERTY_NOT_SUPPORTED
-                eprintln!("[ERROR] Failed to set AF mode. Error code: 0x{:X}", result);
-            } else if result == 0 {
-                println!("[LOG] AF mode set to OneShot successfully.");
-            } else {
-                println!("[LOG] AF mode setting not supported by this camera (normal).");
-            }
+    //         // Устанавливаем режим автофокуса
+    //         let mut af_mode_setting: u32 = 0; // kEdsAFMode_OneShot
+    //         let result = EdsSetPropertyData(
+    //             self.camera_ref,
+    //             0x00000005, // kEdsPropID_AFMode
+    //             0,
+    //             4,
+    //             &mut af_mode_setting as *mut _ as *mut c_void,
+    //         );
+    //         if result != 0 && result != 0x50 { // Игнорируем EDS_ERR_PROPERTY_NOT_SUPPORTED
+    //             eprintln!("[ERROR] Failed to set AF mode. Error code: 0x{:X}", result);
+    //         } else if result == 0 {
+    //             println!("[LOG] AF mode set to OneShot successfully.");
+    //         } else {
+    //             println!("[LOG] AF mode setting not supported by this camera (normal).");
+    //         }
 
-            Ok(())
-        }
-    }
+    //         Ok(())
+    //     }
+    // }
 
     fn setup_event_handlers(&mut self) -> Result<(), u32> {
         unsafe {
@@ -468,14 +468,26 @@ impl Camera {
             self.wait_for_camera_ready()?;
 
             // Выполняем автофокус
-            self.perform_autofocus()?;
+            // self.perform_autofocus()?;
 
             // Отправляем команду на съемку
-            let max_retries = 5;
+            // if EdsSetObjectEventHandler(self.camera_ref, 0x00000200, Camera::handle_object_event, self as *const _ as *mut EdsVoid) != 0 {
+            //     eprintln!("[ERROR] Failed to set object event handler.");
+            //     // return Err(1);
+            // }
+            // if EdsSetPropertyEventHandler(self.camera_ref, 0x00000100, Camera::handle_property_event, std::ptr::null_mut()) != 0 {
+            //     eprintln!("[ERROR] Failed to set property event handler.");
+            //     // return Err(2);
+            // }
+            // if EdsSetCameraStateEventHandler(self.camera_ref, 0x00000300, Camera::handle_state_event, self as *const _ as *mut EdsVoid) != 0 {
+            //     eprintln!("[ERROR] Failed to set camera state event handler.");
+            //     // return Err(3);
+            // }
+            
+            let max_retries = 10; // Максимальное количество попыток
             let mut attempts = 0;
-            let mut success = false;
 
-            while attempts < max_retries && !success {
+            while attempts < max_retries {
                 let mut result;
                 if autofocus_enabled {
                     println!("[LOG] Auto focus enabled.");
@@ -497,21 +509,48 @@ impl Camera {
                     println!("[INFO] Capture command sent successfully.{}", result);
                     break; // Успешное выполнение команды — выходим из цикла
                 } else {
+
                     eprintln!("[ERROR] Failed to send capture command (attempt {}). Error code: 0x{:X}", attempts + 1, result);
-                    
-                    if result == 0x8D07 { // kEdsError_DeviceBusy
-                        thread::sleep(Duration::from_millis(200));
-                    } else if result == 0x00000081 { // kEdsError_DeviceBusy
+
+                    if result == 0x8D07 {
+                        let mut save_target: u32 = 2;
+
+                        let result = EdsSetPropertyData(
+                            self.camera_ref,
+                            0x0000000b,
+                            0,
+                            4,
+                            &mut save_target as *mut _ as *mut c_void,
+                        );
+                        if result != 0 {
+                            eprintln!("[ERROR] Failed to set save target. Error code: 0x{:X}", result);
+                        }
+                        
+                        let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
+                        if result == 0 {
+                            break;
+                            // println!("Nice ");
+                        }
+                    } else if result == 0x00000081 {
                         eprintln!("[ERROR] Device is busy. Retrying...");
-                        thread::sleep(Duration::from_millis(500));
+                    } else {
+                        eprintln!("[ERROR] Failed to send capture command (attempt {}). Error code: 0x{:X}", attempts + 1, result);
                     }
-                    
+                    let result = EdsSendCommand(self.camera_ref, 0x00000004, 0x00000000);
+                    if result == 0 {
+                        break;
+                        // println!("Nice ");
+                    }
                     attempts += 1;
+
+                    // Здесь можно добавить задержку перед следующей попыткой, если нужно
+                    std::thread::sleep(std::time::Duration::from_millis(200)); // Задержка 500 мс
                 }
             }
 
-            if !success {
-                return Err(1);
+            if attempts == max_retries {
+                eprintln!("[ERROR] All attempts to send capture command failed.");
+                // return Err(1); // Возвращаем ошибку после всех попыток
             }
 
             // Ожидаем завершения создания фотографии с таймаутом

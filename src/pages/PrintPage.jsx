@@ -10,7 +10,7 @@ import { useNavigate, NavLink } from 'react-router-dom';
 // import rulSrc from "../components/images_for_template/rule.png";
 import printer from "../assets/printer.png";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import back_img from '../assets/defaultImage.jpeg';
+import back_img from '../assets/defaultImage_2.png';
 // import { drawMyCanvas } from '../components/CanvasDrawer';
 import { useStore } from '../admin/store.js';
 import KonvaCanvas from '../components/KonvaCanvas';
@@ -44,27 +44,47 @@ export default function PrintPage({ images, design, setDesign }) {
     });
   };
 
+  const prepareImageData = () => {
+    if (!stageRef.current) return null;
+
+    garbedCanvas(currentCanvas);
+    const objectsForPrint = getUnflippedObjects(); // если это влияет на `stageRef`, надо уточнить
+    const dataURL = stageRef.current.toDataURL();
+    return dataURL.replace(/^data:image\/(png|jpg);base64,/, '');
+  };
+
+  const printImage = async (imageBase64) => {
+    await invoke('print_image', {
+      imageData: imageBase64,
+      width: Number(currentCanvas.canvasProps.width),
+      height: Number(currentCanvas.canvasProps.height),
+      copies,
+    });
+  };
+
+
   const handlePrint = async () => {
-    if (stageRef.current) {
-      garbedCanvas(currentCanvas);
-      // Временно рендерим с убранным flipX
-      const objectsForPrint = getUnflippedObjects();
-      // Рендерим временный KonvaCanvas для экспорта
-      // (stageRef.current уже содержит нужный canvas, если flipX не используется в редакторе)
-      // Если flipX используется в редакторе, нужно создать временный Stage
-      // Для простоты: если flipX не используется, просто экспортируем
-      const imageData = stageRef.current.toDataURL();
-      const imageBase64 = imageData.replace(/^data:image\/(png|jpg);base64,/, '');
-      setIsImage(imageBase64);
-      toast.done('Printing...', { type: 'info' });
-      await invoke('print_image', { imageData: imageBase64, width: Number(currentCanvas.canvasProps.width), height: Number(currentCanvas.canvasProps.height), copies });
+    const imageBase64 = prepareImageData();
+
+    if (!imageBase64) {
+      toast.error('No image available for printing', { type: 'warning' });
+      return;
+    }
+
+    setIsImage(imageBase64);
+    toast.done('Printing...', { type: 'info' });
+
+    try {
+      await printImage(imageBase64);
       setDesign(true);
       switchCanvas(1);
-      navigate('/')
-    } else {
-      toast.error('No image available for printing', { type: 'warning' });
+      navigate('/');
+    } catch (err) {
+      console.error('Print error:', err);
+      toast.error('Failed to print image', { type: 'error' });
     }
   };
+
 
   const backPage = async () => {
     garbedCanvas(currentCanvas);
@@ -127,6 +147,9 @@ export default function PrintPage({ images, design, setDesign }) {
                             reference={reference}
                             showDottedLine={currentCanvas?.canvasProps?.dottedLine}
                             editable={false}
+                            design={design}
+                            forceReferenceVisible={true} // 🔥 ДОБАВЛЕНО
+                            hideNumbers={false}
                           />
                         </div>
                       </div>
