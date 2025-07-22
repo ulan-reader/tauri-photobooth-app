@@ -17,7 +17,7 @@ import KonvaCanvas from '../components/KonvaCanvas';
 import { Settings } from "lucide-react"
 
 export default function PrintPage({ images, design, setDesign }) {
-  const { canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference } = useStore();
+  const { canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference, background_image_4 } = useStore();
   const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
   usePageNavigation();
   const stageRef = useRef();
@@ -114,7 +114,7 @@ export default function PrintPage({ images, design, setDesign }) {
   return (
     <>
       <div className="flex justify-center items-center">
-        <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{width: '1280px', height: '1024px', backgroundImage: `url(${back_img})`}}>
+        <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{width: '1280px', height: '1024px', backgroundImage: background_image_4 ? background_image_4 : `url(${back_img})`}}>
           <div className='back-img'></div>
           <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
             <div className="w-full flex flex-col gap-9 justify-center items-center px-20">
