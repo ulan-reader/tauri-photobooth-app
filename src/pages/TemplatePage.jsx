@@ -109,19 +109,19 @@ export default function TemplatePage({ design, setDesign }) {
                                     // Галерея изображений
                                     <div className='absolute bottom-1 left-0 w-full h-full flex gap-6 justify-center items-center z-10'>
                                         <img
-                                            src={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.webpData}
-                                            alt={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length].canvasProps.name}
+                                            src={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.webpData}
+                                            alt={availableCanvases[(currentIndex + 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.name}
                                             className="w-64 max-h-96 opacity-50 cursor-pointer"
                                             onClick={prevSlide}
                                         />
                                         <img
-                                            src={availableCanvases[currentIndex].canvasProps.webpData}
-                                            alt={availableCanvases[currentIndex].canvasProps.name}
+                                            src={availableCanvases[currentIndex]?.canvasProps?.webpData}
+                                            alt={availableCanvases[currentIndex]?.canvasProps?.name}
                                             className="w-80 h-112 cursor-pointer border-4 border-blue-500"
                                         />
                                         <img
-                                            src={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length].canvasProps.webpData}
-                                            alt={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length].canvasProps.name}
+                                            src={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.webpData}
+                                            alt={availableCanvases[(currentIndex - 1 + availableCanvases.length) % availableCanvases.length]?.canvasProps?.name}
                                             className="w-64 max-h-96 opacity-50 cursor-pointer"
                                             onClick={nextSlide}
                                         />

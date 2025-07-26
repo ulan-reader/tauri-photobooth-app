@@ -480,7 +480,7 @@ export default function Editor({ isDarkMode }) {
                         Печать
                     </button>
                 </div>
-                <input value={whyBg} className='mt-4 -ml-3 h-8 border border-gray-300 dark:border-gray-600 rounded-md w-11 pl-4 bg-white' disabled/>
+                <input value={whyBg} className='mt-4 -ml-3 h-8 border border-gray-300 dark:border-gray-600 rounded-md w-11 pl-4 bg-white dark:bg-gray-800' disabled/>
                 </div>
             </div>
             <ToastContainer />

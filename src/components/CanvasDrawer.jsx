@@ -267,9 +267,10 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
                 ctx.beginPath();
                 ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
                 ctx.clip();
+                ctx.scale(-1, 1);
                 ctx.drawImage(
                     obj.imgObject,
-                    offsetX - obj.width / 2,
+                    (offsetX - obj.width / 2) * -1 - drawWidth, // зеркалируем по X
                     offsetY - obj.height / 2,
                     drawWidth,
                     drawHeight

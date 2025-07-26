@@ -46,7 +46,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.width + 100}
                         value={selectedObject?.left ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { left: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='flex gap-2 items-center justify-center'>
                     <label className='w-4 flex items-center justify-center'>Y</label>
@@ -55,7 +55,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.height + 100}
                         value={selectedObject?.top ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { top: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <p>Размер</p>
                 <div className='flex gap-2 items-center justify-center'>
@@ -65,7 +65,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.width + 100}
                         value={selectedObject?.width ?? 1}
                         onChange={(e) => updateObject(selectedObjectId, { width: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='flex gap-2 items-center justify-center'>
                     <label className='w-4 flex items-center justify-center'>H</label>
@@ -74,13 +74,13 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.height + 100}
                         value={selectedObject?.height ?? 1}
                         onChange={(e) => updateObject(selectedObjectId, { height: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 {((selectedObject?.numberImage && selectedObject?.type !== 'image') || selectedObject?.type !== 'image') ? (
                     <div className='flex gap-6 items-center col-span-3'>
                         <p>Цвет заливки</p>
                         <input
-                            className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16'
+                            className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'
                             type="color"
                             value={selectedObject?.fill}
                             onChange={(e) => updateObject(selectedObjectId, { fill: e.target.value })}
@@ -101,7 +101,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={20}
                         value={selectedObject.zIndex ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { zIndex: e.target.value })}
-                        className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='grid grid-cols-2 gap-8 items-center justify-end'>
                         <button onClick={() => updateZ_index(selectedObjectId, -1)} className='h-8 items-center bg-blue-500 text-white rounded-md w-14'>Назад</button>
@@ -115,7 +115,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max='100'
                         value={selectedObject?.strokeWidth ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { strokeWidth: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='flex gap-2 items-center justify-center'>
                     <label className='w-4 flex items-center justify-center'>C</label>
@@ -123,7 +123,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         type='color'
                         value={selectedObject?.stroke}
                         onChange={(e) => updateObject(selectedObjectId, { stroke: (e.target.value) })}
-                        className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <p>Тень</p>
                 <div className='flex gap-2 items-center justify-center'>
@@ -132,7 +132,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         type='color'
                         value={selectedObject?.shadowColor}
                         onChange={(e) => updateObject(selectedObjectId, { shadowColor: e.target.value })}
-                        className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='flex gap-2 items-center justify-center'>
                     <label className='w-4 flex items-center justify-center'>B</label>
@@ -141,7 +141,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         min={0} max={100}
                         value={selectedObject?.shadowBlur ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { shadowBlur: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <p>Смещение тени</p>
                 <div className='flex gap-2 items-center justify-center'>
@@ -151,7 +151,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.width / 2 + 100}
                         value={selectedObject?.shadowOffsetX ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { shadowOffsetX: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='flex gap-2 items-center justify-center'>
                     <label className='w-4 flex items-center justify-center'>Y</label>
@@ -160,7 +160,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         max={currentCanvas?.canvasProps?.height / 2 + 100}
                         value={selectedObject?.shadowOffsetY ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { shadowOffsetY: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <p>Угол</p>
                 <div className='flex gap-2 items-center justify-center'>
@@ -170,7 +170,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         min={-360}max={360}
                         value={selectedObject?.rotate ?? 0}
                         onChange={(e) => updateObject(selectedObjectId, { rotate: parseInt(e.target.value, 10) })}
-                        className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
                 <div className='grid grid-cols-2 gap-4 items-center justify-end'>
                     <button onClick={() => updateRotation(selectedObjectId, -45)} className='h-8 items-center bg-blue-500 text-white rounded-md'>-</button>
@@ -182,7 +182,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                     min={0} max={1} step={0.1}
                     value={selectedObject?.opacity || 1}
                     onChange={(e) => updateObject(selectedObjectId, { opacity: (e.target.value) })}
-                    className='h-8 ml-5 border border-gray-300 dark:border-gray-600 rounded-md col-span-2'
+                    className='h-8 ml-5 border border-gray-300 dark:border-gray-600 rounded-md col-span-2 dark:bg-gray-800'
                 />
             </div>
             {selectedObject.numberImage && (
@@ -193,7 +193,7 @@ export default function ObjectProperties({ setSelectedObjectId, selectedObjectId
                         min={1} max={10}
                         value={selectedObject.numberImage}
                         onChange={(e) => updateObject(selectedObjectId, { numberImage: parseInt(e.target.value, 10) })}
-                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                        className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                 </div>
             )}
         </div>

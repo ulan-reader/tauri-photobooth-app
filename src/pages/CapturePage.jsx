@@ -405,7 +405,7 @@ export default function CaptureScreen({ onCapture }) {
                                             {isCameraReady && (
                                                 <div style={{ width: 630, height: 630, position: 'relative' }}>
                                                     <canvas className='rounded-md' ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                                    <canvas className='rounded-md' ref={canvasRefMain} width="630" height="630" style={{ position: 'absolute', zIndex: 2 }} />
+                                                    <canvas className='rounded-md' ref={canvasRefMain} width="630" height="630" style={{ position: 'absolute', zIndex: 2, scale: '-1 1' }} />
                                                 </div>
                                             )}
                                             {isCameraReady && isShooting && (
@@ -459,7 +459,7 @@ export default function CaptureScreen({ onCapture }) {
                                     <div className='flex flex-col items-center w-full gap-10'>
                                         {/* <img src={capturedImage} className='object-cover' style={{ width: 530, height: 530, position: 'relative' }} /> */}
                                         <canvas ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                        <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2 }} className='border-solid border-2 capture-container rounded-md object-cover' />
+                                        <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>

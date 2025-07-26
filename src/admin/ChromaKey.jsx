@@ -242,7 +242,8 @@ export default function Chromakey() {
                     <div className="flex flex-row items-center justify-start gap-2">
                         <label htmlFor="chromakey-color">Выберите цвет для хромакея:</label>
                         <input 
-                            type="color" 
+                            type="color"
+                            className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
                             id="chromakey-color"
                             value={chromokey.color} 
                             onChange={(e) => { setChromokey({ color: e.target.value }) }}
@@ -256,7 +257,7 @@ export default function Chromakey() {
                             max={20}
                             value={camera.counterCapturePhoto ?? 3}
                             onChange={(e) => setCamera({ counterCapturePhoto: Number(e.target.value) })}
-                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                     </div>
                     <div className='flex gap-4 items-center justify-start flex-row' >
                         <span className=''>Сделать видным список фотографии</span>
@@ -264,16 +265,16 @@ export default function Chromakey() {
                             type='checkbox'
                             checked={chromokey.printer_visible ?? false}
                             onChange={(e) => setChromokey({ printer_visible: e.target.checked })}
-                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                     </div>
-                    <div className='flex gap-4 items-center justify-start flex-row' >
+                    {/* <div className='flex gap-4 items-center justify-start flex-row' >
                         <span className=''>Сделать активным способ оплаты</span>
                         <input
                             type='checkbox'
                             checked={camera.payment_enabled ?? false}
                             onChange={(e) => setCamera({ payment_enabled: e.target.checked })}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
-                    </div>
+                    </div> */}
                     <div className='flex gap-4 items-center justify-start flex-row' >
 
                         {camera.toggleAutofocus ?
@@ -285,7 +286,7 @@ export default function Chromakey() {
                             type='checkbox'
                             checked={camera.toggleAutofocus}
                             onChange={toggleAutofocus}
-                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                     </div>
                     <div className="flex justify-between">
                         <button className="flex bg-green-500 text-white p-2 rounded-lg" onClick={saveChanged}><SaveIcon />Сохранить изменения</button>
