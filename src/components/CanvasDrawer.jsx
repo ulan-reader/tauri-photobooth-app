@@ -349,7 +349,7 @@ function drawDashedCenterLines(ctx, canvasWidth, canvasHeight, object) {
 
     // Настройки для линий
     ctx.strokeStyle = 'rgba(255, 255, 255)'; // Полупрозрачный черный цвет
-    ctx.lineWidth = 5; // Толщина линии
+    ctx.lineWidth = 2; // Толщина линии
     ctx.setLineDash([50, 10]); // Пунктир: 5px линия, 5px пробел
 
     // Рисуем вертикальную линию через центр объекта

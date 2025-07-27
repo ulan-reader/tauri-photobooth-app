@@ -201,11 +201,10 @@ export default function Timer() {
                 </button>
                 <button onClick={saveSchedule}>Сохранить расписание</button>
             </div>
-            <div className="p-4">
+            {/* <div className="p-4">
                 <h1 className="text-xl font-bold mb-4">Настройки товара</h1>
 
                 <div className="flex gap-8">
-                    {/* Левая колонка — форма */}
                     <form
                     className="flex flex-col gap-4 w-1/2"
                     onSubmit={(e) => e.preventDefault()}
@@ -264,7 +263,6 @@ export default function Timer() {
                     </button>
                     </form>
 
-                    {/* Правая колонка — выбор QR */}
                     <div className="flex items-center justify-center w-1/2">
                     <label
                         style={{
@@ -288,7 +286,7 @@ export default function Timer() {
                     </label>
                     </div>
                 </div>
-                </div>
+                </div> */}
             <ToastContainer />
         </AdminShell>
     )

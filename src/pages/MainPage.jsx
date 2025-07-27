@@ -11,6 +11,8 @@ import { Settings } from "lucide-react"
 import printer from "../assets/printer.png";
 import backgroundUrl from "../assets/defaultImage.png";
 import { fetchProjects, fetchTemplate, getReferences, getSavedPrinter, handleSaveProject, updateSettings } from "../utils/projectConfig.js";
+import { emit } from '@tauri-apps/api/event';
+import { Power } from "lucide-react"
 
 export default function MainPage({ active, loading, setLoading, setActive, design }) {
     const { license, project, setProject, chromokey, setChromokey, reference, setReferences, setCamera, setCanvasData, currentCanvasId, canvases, switchCanvas, background_image_1, setBackgroundImage } = useStore();
@@ -26,6 +28,17 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
     const [projects, setProjects] = useState([]);
     const [newProjectName, setNewProjectName] = useState('');
     const [selectedProject, setSelectedProject] = useState(null);
+    const [menuVisible, setMenuVisible] = useState(false);
+
+    const toggleMenu = async () => {
+        setMenuVisible(!menuVisible);
+        if (menuVisible) {
+            emit('show_menu');
+        } else {
+            emit('hide_menu');
+        }
+        // await appWindow.setMenuVisible(visible);
+    };
     
     const fetchSavedProject = async () => {
         try {
@@ -163,6 +176,11 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                     </div>
                     <div className="absolute right-16 top-2/5 w-28">
                         { chromokey.printer_visible && <NavLink to="/list"><img className="w-28" src={printer} alt="" /></NavLink> }
+                    </div>
+                    <div className="absolute right-10 top-10 w-28 opacity-10">
+                        <button onClick={() => toggleMenu()} className="col-start-3 justify-self-end p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                            {menuVisible ? <Power className="w-6 h-6 text-red-500" /> : <Power className="w-6 h-6 text-gray-600 dark:text-gray-400" />}
+                        </button>
                     </div>
                 </div>
                 ) }

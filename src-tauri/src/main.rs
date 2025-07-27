@@ -882,6 +882,11 @@ async fn main() {
                         *visible = false;
                         window.menu_handle().hide().unwrap();
                     }
+                    "show_menu" => {
+                        let mut visible = menu_visible.lock().unwrap();
+                        *visible = true;
+                        window.menu_handle().show().unwrap();
+                    }
                     "enter_fullscreen" => {
                         window.set_fullscreen(true).unwrap();
                     }
@@ -893,55 +898,80 @@ async fn main() {
             }
         })
         .setup({
-            move |app| {
-                let handle = app.handle();
-                // let handle_clone = handle.clone();
-                let window = handle.get_window("main").unwrap();
-                let menu_visible = menu_visible.clone();
-                // // Обработчик событий клавиатуры  
-                // tokio::spawn(async {
-                //     let app = Router::new().route("/httppay", post(handle_post));
-                //     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-                //     println!("Fake HTTPPay сервер запущен на http://{}", addr);
-                
-                //     if let Err(e) = hyper::Server::bind(&addr).serve(app.into_make_service()).await {
-                //         eprintln!("Ошибка сервера: {}", e);
-                //     }
-                // });
+    move |app| {
+        let handle = app.handle();
+        let window = handle.get_window("main").unwrap();
+        let menu_visible = menu_visible.clone();
 
-                thread::spawn(move || {
-                    let mut last_check = Instant::now();
-                    loop {
-                        if last_check.elapsed() >= Duration::from_millis(100) {
-                            let keys = DeviceState::new().get_keys();
-                            let mut visible = menu_visible.lock().unwrap(); // Захватываем блокировку
-                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::H) {
-                                // Меняем видимость меню на основе нажатых клавиш
-                                if *visible {
-                                    window.menu_handle().hide().unwrap();
-                                    *visible = false;
-                                } else {
-                                    window.menu_handle().show().unwrap();
-                                    *visible = true;
-                                }
+        // === show_menu listener ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+            window.listen("show_menu", move |_event| {
+                let mut visible = menu_visible.lock().unwrap();
+                *visible = true;
+                if let Err(err) = window_clone.menu_handle().show() {
+                    println!("Failed to show menu: {err}");
+                }
+            });
+        }
+
+        // === hide_menu listener ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+            window.listen("hide_menu", move |_event| {
+                let mut visible = menu_visible.lock().unwrap();
+                *visible = false;
+                if let Err(err) = window_clone.menu_handle().hide() {
+                    println!("Failed to hide menu: {err}");
+                }
+            });
+        }
+
+        // === Keyboard listener thread ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+
+            thread::spawn(move || {
+                let mut last_check = Instant::now();
+                let device = DeviceState::new();
+
+                loop {
+                    if last_check.elapsed() >= Duration::from_millis(100) {
+                        let keys = device.get_keys();
+                        let mut visible = menu_visible.lock().unwrap();
+
+                        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::H) {
+                            if *visible {
+                                let _ = window_clone.menu_handle().hide();
+                                *visible = false;
+                            } else {
+                                let _ = window_clone.menu_handle().show();
+                                *visible = true;
                             }
-                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::F) {
-                                // Переключаем полноэкранный режим
-                                let is_fullscreen = window.is_fullscreen().unwrap_or(false);
-                                window.set_fullscreen(!is_fullscreen).unwrap();
-                            }
-                            last_check = Instant::now();
-                            drop(visible); // Освобождаем блокировку как можно скорее
                         }
-                        thread::sleep(Duration::from_millis(50));
+
+                        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::F) {
+                            let is_fullscreen = window_clone.is_fullscreen().unwrap_or(false);
+                            let _ = window_clone.set_fullscreen(!is_fullscreen);
+                        }
+
+                        last_check = Instant::now();
+                        drop(visible);
                     }
-                });
 
-                // Инициализация директорий
+                    thread::sleep(Duration::from_millis(50));
+                }
+            });
+        }
 
-                Ok(())
-            }
-        })
+        Ok(())
+    }
+})
+
+
         .invoke_handler(tauri::generate_handler![print_image, get_work_hours, set_work_hours, save_image, save_canvas_data, save_canvas_image, load_all_canvas_data, delete_canvas_image_and_data, load_all_canvas_images,
             load_available_canvas_data,
             print_image_use_path,

@@ -416,24 +416,6 @@ export default function TemplateEditor() {
     }
 
     useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (!canvasRef.current) return;
-
-            if (!canvasRef.current.contains(e.target)) {
-                // Клик вне канваса — снять выделение
-                setSelectedIds([]);
-                setSelectedObjectId(null);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-
-    useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 

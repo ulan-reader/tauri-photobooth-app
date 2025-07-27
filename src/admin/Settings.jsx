@@ -4,6 +4,9 @@ import { Moon, Sun, Image, Layout, Fingerprint, Printer, Power, BarChart2 } from
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { invoke } from '@tauri-apps/api/tauri';
 import { useStore } from './store';
+import { appWindow } from '@tauri-apps/api/window';
+import { emit } from '@tauri-apps/api/event';
+import { set } from 'lodash';
 
 
 export default function Settings({ isDarkMode, setIsDarkMode }) {
@@ -36,6 +39,18 @@ export default function Settings({ isDarkMode, setIsDarkMode }) {
         setIsDarkMode(!isDarkMode)
     }
 
+    const [menuVisible, setMenuVisible] = useState(false);
+
+    const toggleMenu = async () => {
+        setMenuVisible(!menuVisible);
+        if (menuVisible) {
+            emit('show_menu');
+        } else {
+            emit('hide_menu');
+        }
+        // await appWindow.setMenuVisible(visible);
+    };
+
 
 
     const settingsSections = [
@@ -55,6 +70,7 @@ export default function Settings({ isDarkMode, setIsDarkMode }) {
                 <main className="p-8">
                     <header className="w-full grid grid-cols-3 items-center mb-8">
                         <h1 className="text-4xl font-bold">Настройки</h1>
+                        
                         <Link
                             to='/'
                             className="text-center py-3 px-4 rounded-lg text-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300 w-fit justify-self-center"
