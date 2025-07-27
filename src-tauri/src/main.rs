@@ -129,32 +129,30 @@ unsafe impl Sync for Camera {}
 impl Camera {
     fn new() -> Result<Arc<Mutex<Self>>, u32> {
         unsafe {
-            let err = EdsInitializeSDK();
-            // println!("EdsInitializeSDK: {}", err);
-            if err != 0 {
-                if err == 2 { // Убедитесь, что код ошибки 2 соответствует вашей логике
-                    // println!("[WARNING] Camera busy or session error. Retrying...");
-                    // EdsCloseSession(camera_ref_in); // Закрытие на случай повторного открытия
-                    // EdsRelease(camera_ref_in);
-                    EdsTerminateSDK();
-                    // Используем ограничение на количество попыток вместо рекурсии
-                    // for _ in 0..3 {
-                        std::thread::sleep(std::time::Duration::from_secs(1));
-                        if let Ok(camera) = Self::new() {
-                            camera.lock().unwrap().start_live_view().unwrap();
+            // let err = EdsInitializeSDK();
+            // // println!("EdsInitializeSDK: {}", err);
+            // if err != 0 {
+            //     if err == 2 { // Убедитесь, что код ошибки 2 соответствует вашей логике
+            //         // println!("[WARNING] Camera busy or session error. Retrying...");
+            //         // EdsCloseSession(camera_ref_in); // Закрытие на случай повторного открытия
+            //         // EdsRelease(camera_ref_in);
+            //         // Используем ограничение на количество попыток вместо рекурсии
+            //         // for _ in 0..3 {
+            //             std::thread::sleep(std::time::Duration::from_secs(1));
+            //             if let Ok(camera) = Self::new() {
+            //                 camera.lock().unwrap().start_live_view().unwrap();
 
-                            return Ok(camera);
-                        }
-                    // }
-                }
-                return Err(err);
-            }
+            //                 return Ok(camera);
+            //             }
+            //         // }
+            //     }
+            //     return Err(err);
+            // }
 
             let mut camera_list: *mut c_void = std::ptr::null_mut();
             let err = EdsGetCameraList(&mut camera_list);
             // println!("EdsGetCameraList: {}", err);
             if err != 0 {
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -162,7 +160,6 @@ impl Camera {
             let err = EdsGetChildCount(camera_list, &mut camera_count);
             if err != 0 || camera_count == 0 {
                 EdsRelease(camera_list);
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -171,7 +168,6 @@ impl Camera {
             // println!("EdsGetChildAtIndex: {}", err);
             EdsRelease(camera_list);
             if err != 0 {
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -179,7 +175,6 @@ impl Camera {
             // println!("EdsOpenSession: {}", err);
             if err != 0 {
                 EdsRelease(camera_ref_in);
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -253,19 +248,13 @@ impl Camera {
                 unsafe {
                     EdsRelease(camera.camera_ref);
                     EdsCloseSession(camera.camera_ref);
-                    EdsTerminateSDK();
                 }
-                // unsafe {
-                //     EdsRelease(camera.camera_ref);
-                //     EdsTerminateSDK();
-                // }
             }
             0x00000305 => {
                     // let camera = unsafe { &mut *(context as *mut Camera) };
                     // unsafe {
                     //     EdsRelease(camera.camera_ref);
                     //     EdsCloseSession(camera.camera_ref);
-                    //     EdsTerminateSDK();
                     // }
                     println!("[INFO] Camera disconnected.");
                     // let camera_new = Camera::new().unwrap();
@@ -585,112 +574,6 @@ impl Camera {
             Ok(())
     }
 
-    // fn stop_live_view(&mut self) -> Result<(), u32> {
-    //     if self.is_live_view_started {
-    //         unsafe {
-    //             let mut device: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000500,
-    //                 0,
-    //                 size_of::<u32>() as u32,
-    //                 &mut device as *mut _ as *mut c_void,
-    //             );
-    //             // println!("device: {}", device);
-    //             // println!("err: {}", err);
-    //             if err != 0 {
-    //                 println!("Ошибка получения устройства вывода: {}", err);
-    //                 return Err(err);
-    //             }
-    
-    //             // Если Live View уже выключен — выходим
-    //             if device & 2 == 0 {
-    //                 println!("Live View уже выключен.");
-    //                 return Ok(());
-    //             }
-    
-    //             // Проверяем статус глубины резкости
-    //             let mut depth_of_field_preview: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000504,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &mut depth_of_field_preview as *mut _ as *mut c_void,
-    //             );
-    
-    //             if err == 0 && depth_of_field_preview != 0 {
-    //                 depth_of_field_preview = 0;
-    //                 let err = EdsSetPropertyData(
-    //                     self.camera_ref,
-    //                     0x00000504,
-    //                     0,
-    //                     std::mem::size_of::<u32>() as u32,
-    //                     &depth_of_field_preview as *const _ as *const c_void,
-    //                 );
-    
-    //                 if err == 0 {
-    //                     // Даем камере время обработать команду
-    //                     thread::sleep(Duration::from_millis(500));
-    //                 }
-    //             }
-    
-    //             // Выключаем Live View
-    //             device &= !2;
-    //             let err = EdsSetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000500,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &device as *const _ as *const c_void,
-    //             );
-    
-    //             if err != 0 {
-    //                 if err == 0x00000081 {
-    //                     println!("Ошибка: устройство занято (Device Busy)");
-    //                 }
-    //                 return Err(err);
-    //             }
-    
-    //             // Проверяем и выключаем Evf_Mode (если включен)
-    //             let mut evf_mode: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000501,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &mut evf_mode as *mut _ as *mut c_void,
-    //             );
-    
-    //             if err == 0 && evf_mode == 1 {
-    //                 evf_mode = 0;
-    //                 let err = EdsSetPropertyData(
-    //                     self.camera_ref,
-    //                     0x00000501,
-    //                     0,
-    //                     std::mem::size_of::<u32>() as u32,
-    //                     &evf_mode as *const _ as *const c_void,
-    //                 );
-    
-    //                 if err == 0x00000081 {
-    //                     println!("Ошибка: устройство занято при отключении Evf_Mode");
-    //                     return Err(err);
-    //                 }
-    //             }
-    
-    //             self.is_live_view_started = false;
-    //             println!("Live View отключен.");
-    //         }
-    //         // Обновляем флаг состояния живого просмотра
-    //         self.is_live_view_started = false;
-    //         println!("Live view stopped.");
-    //         Ok(())
-    //     } else {
-    //         println!("Live view is not active.");
-    //         Ok(())
-    //     }
-    // }
-
     fn download_evf_image(&mut self) -> Result<String, String> {
         unsafe {
             let mut stream: *mut c_void = std::ptr::null_mut();
@@ -704,7 +587,6 @@ impl Camera {
                     EdsRelease(stream);
                     EdsCloseSession(self.camera_ref); // Закрытие на случай повторного открытия
                     EdsRelease(self.camera_ref);
-                    EdsTerminateSDK();
                 }
                 return Err(format!("Error creating memory stream: {}", err));
             }
@@ -726,7 +608,6 @@ impl Camera {
                     // let _err= self.stop_live_view();
                     EdsCloseSession(self.camera_ref); // Закрытие на случай повторного открытия
                     EdsRelease(self.camera_ref);
-                    EdsTerminateSDK();
                     if let Ok(camera) = Self::new() {
                         camera.lock().unwrap().start_live_view().unwrap();
 
@@ -773,7 +654,6 @@ impl Drop for Camera {
         unsafe {
             EdsCloseSession(self.camera_ref);
             EdsRelease(self.camera_ref);
-            EdsTerminateSDK();
         }
     }
 }
@@ -964,6 +844,8 @@ fn end_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Resul
 
 #[tokio::main]
 async fn main() {
+    unsafe { EdsInitializeSDK() };
+
     let main_page = CustomMenuItem::new("main_page".to_string(), "Главная");
     let setting_page = CustomMenuItem::new("setting_page".to_string(), "Настройки");
     let hide_menu = CustomMenuItem::new("hide_menu".to_string(), "Скрыть меню");
@@ -1089,6 +971,17 @@ async fn main() {
             ])
         .manage(Arc::new(Mutex::new(None::<Arc<Mutex<Camera>>>)))
         .manage(PrinterState::default())
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
+                let camera_state = event.window().state::<Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>();
+                if let Some(camera) = camera_state.lock().unwrap().as_ref() {
+                    camera.lock().unwrap().stop_live_view().unwrap();
+                    // camera.lock().unwrap().end_camera().unwrap();
+                }
+                unsafe { EdsTerminateSDK() }; 
+                api.prevent_close(); // Предотвращаем закрытие окна
+            }
+        })
         .manage(LicenseState { license: Mutex::new(None) })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

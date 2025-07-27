@@ -33,6 +33,10 @@ export default function TemplateEditor() {
     const [canvasTemplateName, setCanvasTemplateName] = useState('');
     const canvasTemplate = JSON.parse(localStorage.getItem('canvasTemplates'));
     const [resizeHandle, setResizeHandle] = useState(null);
+    const [selectedObjects, setSelectedObjects] = useState([]);
+    const [groupedObjects, setGroupedObjects] = useState([]);
+    const [isDraggingGroup, setIsDraggingGroup] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
     // const canvasTemplate = canvasTemplates ? canvasTemplates : [];
     const [dragCoords, setDragCoords] = useState({ x: 0, y: 0, width: 0, height: 0 });
     const arrows = {
@@ -364,7 +368,7 @@ export default function TemplateEditor() {
             drawMyCanvas(ctx, canvas, currentCanvas, true, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, false);
     
             // Рисуем выделение только на основном холсте
-            if (selectedObjectId) {
+            if (selectedIds.length === 1) {
                 const selectedObject = currentCanvas.objects.find(obj => obj.id === selectedObjectId);
                 if (selectedObject) {
                     drawResizeHandles(ctx, selectedObject);
@@ -375,7 +379,7 @@ export default function TemplateEditor() {
             drawMyCanvas(ctxSel, canvasSel, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
             drawMyCanvas(ctxSel, canvasSel, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
         }
-    }, [currentCanvas, selectedObjectId]);
+    }, [currentCanvas, selectedObjectId, selectedIds]);
 
     const [isDragging, setIsDragging] = useState(false); // To check if we're dragging
     const [draggedObjectId, setDraggedObjectId] = useState(null); // To store which object is being dragged
@@ -410,6 +414,23 @@ export default function TemplateEditor() {
 
         ctx.setLineDash([]);
     }
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!canvasRef.current) return;
+
+            if (!canvasRef.current.contains(e.target)) {
+                // Клик вне канваса — снять выделение
+                setSelectedIds([]);
+                setSelectedObjectId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
 
     useEffect(() => {
@@ -450,10 +471,19 @@ export default function TemplateEditor() {
                 const topObject = clickedObjects.reduce((maxObj, obj) =>
                     obj.zIndex > maxObj.zIndex ? obj : maxObj
                 );
+
+                if (e.shiftKey) {
+                    // Множественное выделение
+                    setSelectedIds(prev => [...new Set([...prev, topObject.id])]);
+                } else {
+                    setSelectedIds([topObject.id]);
+                }
+                
                 setIsDragging(true);
                 setDraggedObjectId(topObject.id);
                 setDragOffset({ x: x - topObject.left, y: y - topObject.top });
             } else {
+                setSelectedIds([]);
                 setSelectedObjectId(null);
             }
         };
@@ -544,7 +574,18 @@ export default function TemplateEditor() {
 
             const newLeft = Math.round(x - dragOffset.x);
             const newTop = Math.round(y - dragOffset.y);
-            updateObject(draggedObjectId, { left: newLeft, top: newTop });
+            const dx = newLeft - currentCanvas.objects.find(obj => obj.id === draggedObjectId).left;
+            const dy = newTop - currentCanvas.objects.find(obj => obj.id === draggedObjectId).top;
+
+            selectedIds.forEach(id => {
+                const obj = currentCanvas.objects.find(o => o.id === id);
+                if (obj) {
+                    updateObject(id, {
+                        left: obj.left + dx,
+                        top: obj.top + dy
+                    });
+                }
+            });
 
             const movedObject = currentCanvas.objects.find(obj => obj.id === draggedObjectId);
             if (movedObject) {

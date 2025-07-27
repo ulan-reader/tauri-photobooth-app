@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../App.css';
 import templateTriangle from '../assets/templateTriangle.png';
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import back_img from '../assets/defaultImage.jpeg';
+import back_img from '../assets/defaultImage_2.png';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri"
 import { useStore } from '../admin/store.js';
 import { toast, ToastContainer } from 'react-toastify';
@@ -17,28 +17,6 @@ export default function TemplatePage({ design, setDesign }) {
 
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // useEffect(() => {
-    //     const fetchImage = async () => {
-    //         try {
-    //             const image = await invoke('get_image_path', { path: `background/2_background` })
-    //             const url_image = `url(${convertFileSrc(image)})`;
-    //             setBgImage(url_image);
-    //             if (image && image.trim() !== "") {
-    //                 setBgImage(url_image);
-    //                 localStorage.setItem("back_2", url_image);
-    //             } else {
-    //                 throw new Error("Изображение не найдено");
-    //             }
-    //         } catch (err) {
-    //             localStorage.removeItem("back_2");
-    //             setBgImage(`url(${back_img})`);
-    //             console.log(err);
-    //         }
-    //     };
-
-    //     fetchImage();
-    // },[]);
-
     useEffect(() => {
         const canvasHolder = () => {
             setCurrentIndex(availableCanvases.findIndex(t => t.id === currentCanvasId));
@@ -48,24 +26,14 @@ export default function TemplatePage({ design, setDesign }) {
     const handleNext = async () => {
         try {
             console.log("init camera")
-            
-            // if (!camera.isCameraOn) {
-            //     await invoke('initialize_camera');
-            //     setCamera({ isCameraOn: true });
-            // }
-            if (camera.payment_enabled) {
-                const settings = await invoke('read_settings');
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
-                
-                navigate('/payment');
+           
+        
+            if (!camera.isCameraOn) {
+                await invoke('initialize_camera');
+                setCamera({ isCameraOn: true });
             }
-            else {
-                if (!camera.isCameraOn) {
-                    await invoke('initialize_camera');
-                    setCamera({ isCameraOn: true });
-                }
-                navigate('/capture')
-            };
+            navigate('/capture')
+
             setCamera({ isLiveView: true });
             await invoke('start_live_view');
         } catch(error) {

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri";
 import { NavLink } from "react-router-dom";
 import printer from '../assets/printer.png'
-import image from '../assets/image.png'
 import refresh_icon from '../assets/refresh.png'
 import templateTriangle from '../assets/templateTriangle.png';
 import { usePageNavigation } from "../hooks/usePageNavigation";

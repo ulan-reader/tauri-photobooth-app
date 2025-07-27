@@ -44,7 +44,7 @@ const props = {
     type: 'editor'
 }
 
-import defaultImage from "../assets/defaultImage.jpeg";
+import defaultImage from "../assets/defaultImage_2.png";
 import { useStore } from "./store.js";
 
 export default function Editor({ isDarkMode }) {

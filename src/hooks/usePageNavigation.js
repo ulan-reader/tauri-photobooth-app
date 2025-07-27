@@ -20,9 +20,9 @@ export function usePageNavigation() {
   
       const cameraStatusCheck = async () => {
         if (camera.isLiveView) {
-          // await invoke('stop_live_view');
-          // setCamera({ ...camera, isLiveView: false });
-          // navigate('/');
+          await invoke('stop_live_view');
+          setCamera({ ...camera, isLiveView: false });
+          navigate('/');
         }
 
         if (project.isCurrent) {

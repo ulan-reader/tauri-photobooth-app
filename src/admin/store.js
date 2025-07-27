@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import back_img_2 from '../assets/defaultImage_2.png'; // Фоновое изображение
-import back_img from '../assets/defaultImage.png'; // Фоновое изображение
+import back_img from '../assets/template_default_image.jpg'; // Фоновое изображение
 // import back_img_3 from '../assets/defaultImage_3.png'; // Фоновое изображение
 // import back_img_4 from '../assets/defaultImage_4.png'; // Фоновое изображение
 import { background } from '@chakra-ui/react';

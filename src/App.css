@@ -2,23 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* .main-screen { */
-.container1 {
-  width: 1280px;
-  height: 1024px;
-  position: relative;
-  background-image: url(./assets/firstMainBg.jpeg);
-}
-
-.container2 {
-  width: 1280px;
-  height: 1024px;
-  position: relative;
-  background-image: url(./assets/secondMainBg.jpeg);
-}
-
-
 .word {
   position: absolute;
   top: 70%;

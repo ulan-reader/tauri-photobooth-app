@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { useStore } from "./store";
 import { SaveIcon, ArrowBigUpDash } from "lucide-react";
-import backgroundUrl from "../assets/defaultImage.jpeg";
+import backgroundUrl from "../assets/defaultImage_2.png";
 import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
 import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
@@ -165,7 +165,7 @@ export default function Chromakey() {
 
     const saveChanged = async () => {
         try {
-            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled });
+            await invoke('save_settings', { color: chromokey.color, counter: camera.counterCapturePhoto, status: chromokey.isEnabled, visible: chromokey.printer_visible, payment: camera.payment_enabled, autofocus: camera.toggleAutofocus });
             console.log('Изменения успешно сохранены');
         } catch (err) {
             console.error('Ошибка сохранения фона:', err);
@@ -178,7 +178,7 @@ export default function Chromakey() {
 
             if (settings) {
                 setChromokey({ color: settings.color, isEnabled: settings.is_enabled, printer_visible: settings.printer_visible });
-                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, toggleAutofocus: settings.toggle_autofocus });
             }
             
             const background = await invoke('get_image_path', { path: `settings/chromokey_image`});

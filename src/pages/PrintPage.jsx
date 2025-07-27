@@ -12,7 +12,7 @@ import right_word from "../components/images_for_template/word_right.png";
 import rulSrc from "../components/images_for_template/rule.png";
 import printer from "../assets/printer.png";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import back_img from '../assets/defaultImage.jpeg';
+import back_img from '../assets/defaultImage_2.png';
 import { drawMyCanvas } from '../components/CanvasDrawer';
 import { useStore } from '../admin/store.js';
 import { Settings } from "lucide-react"
