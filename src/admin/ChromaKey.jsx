@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { useStore } from "./store";
 import { SaveIcon, ArrowBigUpDash } from "lucide-react";
-import backgroundUrl from "../assets/defaultImage.jpeg";
+import backgroundUrl from "../assets/defaultImage_2.png";
 import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
 import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';

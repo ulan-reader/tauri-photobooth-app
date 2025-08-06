@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../App.css';
 import templateTriangle from '../assets/templateTriangle.png';
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import back_img from '../assets/defaultImage.jpeg';
+import back_img from '../assets/defaultImage_2.png';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri"
 import { useStore } from '../admin/store.js';
 import { toast, ToastContainer } from 'react-toastify';

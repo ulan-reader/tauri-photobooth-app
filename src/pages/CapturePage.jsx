@@ -7,7 +7,6 @@ import { Loader2 } from "lucide-react";
 import templateTriangle from '../assets/templateTriangle.png';
 import cameraCapture from '../assets/cameraCapture.png';
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import back_img from '../assets/defaultImage.jpeg';  // ПОМЕНЯТЬ НА СВОЙ ФОН
 import { useStore } from '../admin/store.js';
 import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
 
@@ -426,7 +425,7 @@ export default function CaptureScreen({ onCapture }) {
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
                                             {!camera.payment_enabled && (
-                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700'  onClick={handleBack} disabled={isButtonDisabled}>
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900'  onClick={handleBack} disabled={isButtonDisabled}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
@@ -449,7 +448,7 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                             
                                             {!camera.payment_enabled && (
-                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
@@ -462,7 +461,7 @@ export default function CaptureScreen({ onCapture }) {
                                         <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2 }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
                                             {!camera.payment_enabled && (
-                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={handleBack}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
@@ -486,7 +485,7 @@ export default function CaptureScreen({ onCapture }) {
                                                 </div>
                                             )}
                                             {!camera.payment_enabled && (
-                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }} onClick={handleBack}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
