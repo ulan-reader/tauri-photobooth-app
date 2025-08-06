@@ -11,7 +11,6 @@ mod chromokey_fn;
 mod work_hours_fn;
 mod init_project_fn;
 mod license;
-mod payment_fn;
 
 use globals::{LicenseState, PrinterState, PROJECT_PATH, TemplatePaths};
 use init_project_fn::{get_projects, select_project, delete_project, load_project_name};
@@ -20,7 +19,6 @@ use image_fn::{delete_image, get_image_path, save_image, get_image_paths};
 use chromokey_fn::{save_settings, read_settings};
 use work_hours_fn::{get_work_hours, set_work_hours};
 use license::{verify_license, check_license};
-use payment_fn::{start_payment_session, cancel_payment_session, complete_payment_session, get_payment_status, get_device_options, take_item_information_path};
 
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -57,16 +55,7 @@ type EdsPropertyEvent = c_uint;
 type EdsBaseRef = *mut c_void;
 type EdsVoid = c_void;
 
-use axum::{
-    routing::post,
-    http::StatusCode,
-    response::IntoResponse,
-    Json, Router,
-};
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-use hyper::Server;
-use tauri::async_runtime;
 
 #[link(name = "EDSDK")]
 extern "C" {
@@ -140,32 +129,30 @@ unsafe impl Sync for Camera {}
 impl Camera {
     fn new() -> Result<Arc<Mutex<Self>>, u32> {
         unsafe {
-            let err = EdsInitializeSDK();
-            // println!("EdsInitializeSDK: {}", err);
-            if err != 0 {
-                if err == 2 { // Убедитесь, что код ошибки 2 соответствует вашей логике
-                    // println!("[WARNING] Camera busy or session error. Retrying...");
-                    // EdsCloseSession(camera_ref_in); // Закрытие на случай повторного открытия
-                    // EdsRelease(camera_ref_in);
-                    EdsTerminateSDK();
-                    // Используем ограничение на количество попыток вместо рекурсии
-                    // for _ in 0..3 {
-                        std::thread::sleep(std::time::Duration::from_secs(1));
-                        if let Ok(camera) = Self::new() {
-                            camera.lock().unwrap().start_live_view().unwrap();
+            // let err = EdsInitializeSDK();
+            // // println!("EdsInitializeSDK: {}", err);
+            // if err != 0 {
+            //     if err == 2 { // Убедитесь, что код ошибки 2 соответствует вашей логике
+            //         // println!("[WARNING] Camera busy or session error. Retrying...");
+            //         // EdsCloseSession(camera_ref_in); // Закрытие на случай повторного открытия
+            //         // EdsRelease(camera_ref_in);
+            //         // Используем ограничение на количество попыток вместо рекурсии
+            //         // for _ in 0..3 {
+            //             std::thread::sleep(std::time::Duration::from_secs(1));
+            //             if let Ok(camera) = Self::new() {
+            //                 camera.lock().unwrap().start_live_view().unwrap();
 
-                            return Ok(camera);
-                        }
-                    // }
-                }
-                return Err(err);
-            }
+            //                 return Ok(camera);
+            //             }
+            //         // }
+            //     }
+            //     return Err(err);
+            // }
 
             let mut camera_list: *mut c_void = std::ptr::null_mut();
             let err = EdsGetCameraList(&mut camera_list);
             // println!("EdsGetCameraList: {}", err);
             if err != 0 {
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -173,7 +160,6 @@ impl Camera {
             let err = EdsGetChildCount(camera_list, &mut camera_count);
             if err != 0 || camera_count == 0 {
                 EdsRelease(camera_list);
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -182,7 +168,6 @@ impl Camera {
             // println!("EdsGetChildAtIndex: {}", err);
             EdsRelease(camera_list);
             if err != 0 {
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -190,7 +175,6 @@ impl Camera {
             // println!("EdsOpenSession: {}", err);
             if err != 0 {
                 EdsRelease(camera_ref_in);
-                EdsTerminateSDK();
                 return Err(err);
             }
 
@@ -264,19 +248,13 @@ impl Camera {
                 unsafe {
                     EdsRelease(camera.camera_ref);
                     EdsCloseSession(camera.camera_ref);
-                    EdsTerminateSDK();
                 }
-                // unsafe {
-                //     EdsRelease(camera.camera_ref);
-                //     EdsTerminateSDK();
-                // }
             }
             0x00000305 => {
                     // let camera = unsafe { &mut *(context as *mut Camera) };
                     // unsafe {
                     //     EdsRelease(camera.camera_ref);
                     //     EdsCloseSession(camera.camera_ref);
-                    //     EdsTerminateSDK();
                     // }
                     println!("[INFO] Camera disconnected.");
                     // let camera_new = Camera::new().unwrap();
@@ -596,112 +574,6 @@ impl Camera {
             Ok(())
     }
 
-    // fn stop_live_view(&mut self) -> Result<(), u32> {
-    //     if self.is_live_view_started {
-    //         unsafe {
-    //             let mut device: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000500,
-    //                 0,
-    //                 size_of::<u32>() as u32,
-    //                 &mut device as *mut _ as *mut c_void,
-    //             );
-    //             // println!("device: {}", device);
-    //             // println!("err: {}", err);
-    //             if err != 0 {
-    //                 println!("Ошибка получения устройства вывода: {}", err);
-    //                 return Err(err);
-    //             }
-    
-    //             // Если Live View уже выключен — выходим
-    //             if device & 2 == 0 {
-    //                 println!("Live View уже выключен.");
-    //                 return Ok(());
-    //             }
-    
-    //             // Проверяем статус глубины резкости
-    //             let mut depth_of_field_preview: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000504,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &mut depth_of_field_preview as *mut _ as *mut c_void,
-    //             );
-    
-    //             if err == 0 && depth_of_field_preview != 0 {
-    //                 depth_of_field_preview = 0;
-    //                 let err = EdsSetPropertyData(
-    //                     self.camera_ref,
-    //                     0x00000504,
-    //                     0,
-    //                     std::mem::size_of::<u32>() as u32,
-    //                     &depth_of_field_preview as *const _ as *const c_void,
-    //                 );
-    
-    //                 if err == 0 {
-    //                     // Даем камере время обработать команду
-    //                     thread::sleep(Duration::from_millis(500));
-    //                 }
-    //             }
-    
-    //             // Выключаем Live View
-    //             device &= !2;
-    //             let err = EdsSetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000500,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &device as *const _ as *const c_void,
-    //             );
-    
-    //             if err != 0 {
-    //                 if err == 0x00000081 {
-    //                     println!("Ошибка: устройство занято (Device Busy)");
-    //                 }
-    //                 return Err(err);
-    //             }
-    
-    //             // Проверяем и выключаем Evf_Mode (если включен)
-    //             let mut evf_mode: u32 = 0;
-    //             let err = EdsGetPropertyData(
-    //                 self.camera_ref,
-    //                 0x00000501,
-    //                 0,
-    //                 std::mem::size_of::<u32>() as u32,
-    //                 &mut evf_mode as *mut _ as *mut c_void,
-    //             );
-    
-    //             if err == 0 && evf_mode == 1 {
-    //                 evf_mode = 0;
-    //                 let err = EdsSetPropertyData(
-    //                     self.camera_ref,
-    //                     0x00000501,
-    //                     0,
-    //                     std::mem::size_of::<u32>() as u32,
-    //                     &evf_mode as *const _ as *const c_void,
-    //                 );
-    
-    //                 if err == 0x00000081 {
-    //                     println!("Ошибка: устройство занято при отключении Evf_Mode");
-    //                     return Err(err);
-    //                 }
-    //             }
-    
-    //             self.is_live_view_started = false;
-    //             println!("Live View отключен.");
-    //         }
-    //         // Обновляем флаг состояния живого просмотра
-    //         self.is_live_view_started = false;
-    //         println!("Live view stopped.");
-    //         Ok(())
-    //     } else {
-    //         println!("Live view is not active.");
-    //         Ok(())
-    //     }
-    // }
-
     fn download_evf_image(&mut self) -> Result<String, String> {
         unsafe {
             let mut stream: *mut c_void = std::ptr::null_mut();
@@ -715,7 +587,6 @@ impl Camera {
                     EdsRelease(stream);
                     EdsCloseSession(self.camera_ref); // Закрытие на случай повторного открытия
                     EdsRelease(self.camera_ref);
-                    EdsTerminateSDK();
                 }
                 return Err(format!("Error creating memory stream: {}", err));
             }
@@ -737,7 +608,6 @@ impl Camera {
                     // let _err= self.stop_live_view();
                     EdsCloseSession(self.camera_ref); // Закрытие на случай повторного открытия
                     EdsRelease(self.camera_ref);
-                    EdsTerminateSDK();
                     if let Ok(camera) = Self::new() {
                         camera.lock().unwrap().start_live_view().unwrap();
 
@@ -784,7 +654,6 @@ impl Drop for Camera {
         unsafe {
             EdsCloseSession(self.camera_ref);
             EdsRelease(self.camera_ref);
-            EdsTerminateSDK();
         }
     }
 }
@@ -932,20 +801,6 @@ fn get_captured_image() -> Result<String, String> {
     }
 }
 
-// #[tauri::command]
-// fn capture_photo(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
-//     let state_lock = state.lock().unwrap();
-//     if let Some(camera) = &*state_lock {
-//         let camera_lock = camera.lock().unwrap();
-//         match camera_lock.capture_photo() {
-//             Ok(_) => Ok("Photo captured successfully".into()),
-//             Err(err) => Err(format!("Failed to capture photo: Error code {}", err)),
-//         }
-//     } else {
-//         Err("Camera is not initialized".into())
-//     }
-// }
-
 #[tauri::command]
 fn start_live_view(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Result<String, String> {
     let camera = state.lock().unwrap();
@@ -986,274 +841,10 @@ fn end_camera(state: State<'_, Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>) -> Resul
     }
 }
 
-// #[derive(Debug, Clone)]
-// struct ControllerState {
-//     status: String, // idle, session, paid, canceled
-//     last_action: Instant,
-//     amount: Option<f64>,
-//     item: Option<u16>,
-//     name_kz: Option<String>,
-//     name_ru: Option<String>,
-// }
-
-// impl ControllerState {
-//     fn new() -> Self {
-//         ControllerState {
-//             status: "idle".to_string(),
-//             last_action: Instant::now(),
-//             amount: None,
-//             item: None,
-//             name_kz: None,
-//             name_ru: None,
-//         }
-//     }
-
-//     fn reset(&mut self) {
-//         *self = Self::new();
-//     }
-// }
-
-// #[derive(Deserialize)]
-// struct HttpPayRequest {
-//     act: String,
-//     #[serde(default)]
-//     amount: Option<f64>,
-//     #[serde(default)]
-//     item: Option<u16>,
-//     #[serde(default)]
-//     name_kz: Option<String>,
-//     #[serde(default)]
-//     name_ru: Option<String>,
-//     #[serde(default)]
-//     info: Option<Vec<InfoItem>>,
-// }
-
-// #[derive(Deserialize)]
-// struct InfoItem {
-//     code: u32,
-//     description: String,
-// }
-
-// #[derive(Serialize)]
-// struct HttpPayResponse {
-//     error: String,
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     status: Option<String>,
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     guid: Option<String>,
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     custom: Option<String>,
-// }
-
-// async fn handle_request(
-//     req: Request<Body>,
-//     state: Arc<Mutex<ControllerState>>,
-// ) -> Result<Response<Body>, hyper::Error> {
-//     if req.method() != hyper::Method::POST || req.uri().path() != "/httppay" {
-//         return Ok(Response::builder()
-//             .status(StatusCode::NOT_FOUND)
-//             .body(Body::from(json!({ "error": "unknown" }).to_string()))
-//             .unwrap());
-//     }
-
-//     let headers = req.headers();
-//     if headers.get("Content-Type") != Some(&"application/json".parse().unwrap()) {
-//         return Ok(Response::builder()
-//             .status(StatusCode::BAD_REQUEST)
-//             .body(Body::from(json!({ "error": "bad_args" }).to_string()))
-//             .unwrap());
-//     }
-
-//     let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
-//     let request: HttpPayRequest = match serde_json::from_slice(&body_bytes) {
-//         Ok(req) => req,
-//         Err(_) => {
-//             return Ok(Response::builder()
-//                 .status(StatusCode::BAD_REQUEST)
-//                 .body(Body::from(json!({ "error": "bad_args" }).to_string()))
-//                 .unwrap());
-//         }
-//     };
-
-//     let mut state = state.lock().unwrap();
-
-//     if state.status == "session" && state.last_action.elapsed().as_secs() >= 120 {
-//         state.status = "canceled".to_string();
-//         state.last_action = Instant::now();
-//     } else if state.status == "paid" && state.last_action.elapsed().as_secs() >= 120 {
-//         state.status = "idle".to_string();
-//         state.reset();
-//     }
-
-//     let response = match request.act.as_str() {
-//         "status" => {
-//             json!({
-//                 "error": "ok",
-//                 "status": state.status
-//             })
-//         }
-//         "request" => {
-//             if state.status != "idle" {
-//                 json!({ "error": "collision" })
-//             } else if let (Some(amount), Some(item)) = (request.amount, request.item) {
-//                 if amount < 0.01 || amount > 9999.99 || item > 65535
-//                     || request.name_kz.as_ref().map_or(false, |s| s.len() > 31)
-//                     || request.name_ru.as_ref().map_or(false, |s| s.len() > 31)
-//                 {
-//                     json!({ "error": "bad_values" })
-//                 } else {
-//                     state.status = "session".to_string();
-//                     state.amount = Some(amount);
-//                     state.item = Some(item);
-//                     state.name_kz = request.name_kz;
-//                     state.name_ru = request.name_ru;
-//                     state.last_action = Instant::now();
-//                     json!({ "error": "ok" })
-//                 }
-//             } else {
-//                 json!({ "error": "bad_args" })
-//             }
-//         }
-//         "complete" => {
-//             if state.status == "session" || state.status == "paid" || state.status == "canceled" {
-//                 state.status = "idle".to_string();
-//                 state.reset();
-//                 json!({ "error": "ok" })
-//             } else {
-//                 json!({ "error": "collision" })
-//             }
-//         }
-//         "cancel" => {
-//             if state.status == "session" || state.status == "paid" {
-//                 state.status = "canceled".to_string();
-//                 state.last_action = Instant::now();
-//                 json!({ "error": "ok" })
-//             } else {
-//                 json!({ "error": "collision" })
-//             }
-//         }
-//         "info" => {
-//             if let Some(info) = request.info {
-//                 if info.iter().any(|i| i.description.len() > 63) {
-//                     json!({ "error": "bad_values" })
-//                 } else {
-//                     json!({ "error": "ok" })
-//                 }
-//             } else {
-//                 json!({ "error": "bad_args" })
-//             }
-//         }
-//         "option" => {
-//             json!({
-//                 "error": "ok",
-//                 "guid": "123e4567-e89b-12d3-a456-426614174000",
-//                 "custom": "Photobooth Controller"
-//             })
-//         }
-//         _ => json!({ "error": "unknown_act" }),
-//     };
-
-//     Ok(Response::builder()
-//         .status(StatusCode::OK)
-//         .header("Content-Type", "application/json")
-//         .body(Body::from(response.to_string()))
-//         .unwrap())
-// }
-
-// async fn start_server(state: Arc<Mutex<ControllerState>>) -> Result<(), std::io::Error> {
-//     let addr = ([127, 0, 0, 1], 8080).into();
-//     let service = service_fn(move |req| handle_request(req, state.clone()));
-//     let server = Server::try_bind(&addr)?.serve(Shared::new(service));
-//     println!("Fake HTTPPay server running on http://{}", addr);
-//     server.await?;
-//     Ok(())
-// }
-struct ControllerState {
-    status: String, // idle, session, paid, canceled
-    last_action: Instant,
-    amount: Option<f64>,
-    item: Option<u16>,
-    name_kz: Option<String>,
-    name_ru: Option<String>,
-}
-
-impl ControllerState {
-    fn new() -> Self {
-        ControllerState {
-            status: "idle".to_string(),
-            last_action: Instant::now(),
-            amount: None,
-            item: None,
-            name_kz: None,
-            name_ru: None,
-        }
-    }
-
-    fn reset(&mut self) {
-        *self = Self::new();
-    }
-}
-    #[derive(Deserialize, Debug)]
-    struct HttpPayRequest {
-        act: String,
-    }
-
-    #[derive(Serialize)]
-    struct HttpPayResponse<'a> {
-        error: &'a str,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        status: Option<&'a str>,
-    }
-
-async fn handle_post(Json(payload): Json<HttpPayRequest>) -> impl IntoResponse {
-    println!("Получен запрос от контроллера: {:?}", payload);
-
-    match payload.act.as_str() {
-        "status" => {
-            Json(HttpPayResponse {
-                error: "ok",
-                status: Some("idle"),
-            })
-        }
-        "request" => {
-            Json(HttpPayResponse {
-                error: "ok",
-                status: None,
-            })
-        }
-        "complete" | "cancel" => {
-            Json(HttpPayResponse {
-                error: "ok",
-                status: None,
-            })
-        }
-        _ => Json(HttpPayResponse {
-            error: "unknown_act",
-            status: None,
-        }),
-    }
-}
-
-async fn start_server<ControllerState>(state: Arc<Mutex<ControllerState>>) -> Result<(), hyper::Error> {
-    let app = Router::new().route("/httppay", post(handle_post));
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 80)); // или 8080, если порт 80 занят
-    println!("Сервер ловушка запущен на http://{}", addr);
-    Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
-
-    Ok(())
-}
 
 #[tokio::main]
 async fn main() {
-    // Создаем элементы меню
-    let controller_state = Arc::new(Mutex::new(ControllerState::new()));
-
-    // Запускаем фейковый сервер
-    async_runtime::spawn(start_server(controller_state.clone()));
+    unsafe { EdsInitializeSDK() };
 
     let main_page = CustomMenuItem::new("main_page".to_string(), "Главная");
     let setting_page = CustomMenuItem::new("setting_page".to_string(), "Настройки");
@@ -1291,6 +882,11 @@ async fn main() {
                         *visible = false;
                         window.menu_handle().hide().unwrap();
                     }
+                    "show_menu" => {
+                        let mut visible = menu_visible.lock().unwrap();
+                        *visible = true;
+                        window.menu_handle().show().unwrap();
+                    }
                     "enter_fullscreen" => {
                         window.set_fullscreen(true).unwrap();
                     }
@@ -1302,55 +898,80 @@ async fn main() {
             }
         })
         .setup({
-            move |app| {
-                let handle = app.handle();
-                // let handle_clone = handle.clone();
-                let window = handle.get_window("main").unwrap();
-                let menu_visible = menu_visible.clone();
-                // // Обработчик событий клавиатуры  
-                // tokio::spawn(async {
-                //     let app = Router::new().route("/httppay", post(handle_post));
-                //     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-                //     println!("Fake HTTPPay сервер запущен на http://{}", addr);
-                
-                //     if let Err(e) = hyper::Server::bind(&addr).serve(app.into_make_service()).await {
-                //         eprintln!("Ошибка сервера: {}", e);
-                //     }
-                // });
+    move |app| {
+        let handle = app.handle();
+        let window = handle.get_window("main").unwrap();
+        let menu_visible = menu_visible.clone();
 
-                thread::spawn(move || {
-                    let mut last_check = Instant::now();
-                    loop {
-                        if last_check.elapsed() >= Duration::from_millis(100) {
-                            let keys = DeviceState::new().get_keys();
-                            let mut visible = menu_visible.lock().unwrap(); // Захватываем блокировку
-                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::H) {
-                                // Меняем видимость меню на основе нажатых клавиш
-                                if *visible {
-                                    window.menu_handle().hide().unwrap();
-                                    *visible = false;
-                                } else {
-                                    window.menu_handle().show().unwrap();
-                                    *visible = true;
-                                }
+        // === show_menu listener ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+            window.listen("show_menu", move |_event| {
+                let mut visible = menu_visible.lock().unwrap();
+                *visible = true;
+                if let Err(err) = window_clone.menu_handle().show() {
+                    println!("Failed to show menu: {err}");
+                }
+            });
+        }
+
+        // === hide_menu listener ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+            window.listen("hide_menu", move |_event| {
+                let mut visible = menu_visible.lock().unwrap();
+                *visible = false;
+                if let Err(err) = window_clone.menu_handle().hide() {
+                    println!("Failed to hide menu: {err}");
+                }
+            });
+        }
+
+        // === Keyboard listener thread ===
+        {
+            let window_clone = window.clone(); // отдельный клон
+            let menu_visible = menu_visible.clone();
+
+            thread::spawn(move || {
+                let mut last_check = Instant::now();
+                let device = DeviceState::new();
+
+                loop {
+                    if last_check.elapsed() >= Duration::from_millis(100) {
+                        let keys = device.get_keys();
+                        let mut visible = menu_visible.lock().unwrap();
+
+                        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::H) {
+                            if *visible {
+                                let _ = window_clone.menu_handle().hide();
+                                *visible = false;
+                            } else {
+                                let _ = window_clone.menu_handle().show();
+                                *visible = true;
                             }
-                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::F) {
-                                // Переключаем полноэкранный режим
-                                let is_fullscreen = window.is_fullscreen().unwrap_or(false);
-                                window.set_fullscreen(!is_fullscreen).unwrap();
-                            }
-                            last_check = Instant::now();
-                            drop(visible); // Освобождаем блокировку как можно скорее
                         }
-                        thread::sleep(Duration::from_millis(50));
+
+                        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::LShift) && keys.contains(&Keycode::F) {
+                            let is_fullscreen = window_clone.is_fullscreen().unwrap_or(false);
+                            let _ = window_clone.set_fullscreen(!is_fullscreen);
+                        }
+
+                        last_check = Instant::now();
+                        drop(visible);
                     }
-                });
 
-                // Инициализация директорий
+                    thread::sleep(Duration::from_millis(50));
+                }
+            });
+        }
 
-                Ok(())
-            }
-        })
+        Ok(())
+    }
+})
+
+
         .invoke_handler(tauri::generate_handler![print_image, get_work_hours, set_work_hours, save_image, save_canvas_data, save_canvas_image, load_all_canvas_data, delete_canvas_image_and_data, load_all_canvas_images,
             load_available_canvas_data,
             print_image_use_path,
@@ -1376,16 +997,21 @@ async fn main() {
             save_canvas_template,
             get_saved_canvas_template_paths,
             load_canvas_template, 
-            save_part_templates,
-            start_payment_session,
-            cancel_payment_session,
-            complete_payment_session,
-            get_payment_status,
-            get_device_options,
-            take_item_information_path
+            save_part_templates
             ])
         .manage(Arc::new(Mutex::new(None::<Arc<Mutex<Camera>>>)))
         .manage(PrinterState::default())
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
+                let camera_state = event.window().state::<Arc<Mutex<Option<Arc<Mutex<Camera>>>>>>();
+                if let Some(camera) = camera_state.lock().unwrap().as_ref() {
+                    camera.lock().unwrap().stop_live_view().unwrap();
+                    // camera.lock().unwrap().end_camera().unwrap();
+                }
+                unsafe { EdsTerminateSDK() }; 
+                api.prevent_close(); // Предотвращаем закрытие окна
+            }
+        })
         .manage(LicenseState { license: Mutex::new(None) })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

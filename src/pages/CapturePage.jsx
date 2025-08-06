@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
-// import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/tauri';
 import '../App.css';
 import { Loader2 } from "lucide-react";
 import templateTriangle from '../assets/templateTriangle.png';
@@ -10,25 +9,9 @@ import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { useStore } from '../admin/store.js';
 import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
 
-// import test_image_1 from '../image_beta/IMG_6700.JPG';
-// import test_image_2 from '../image_beta/IMG_7107.JPG';
-// import test_image_3 from '../image_beta/IMG_7111.JPG';
-
-// import test_image_1 from '../image_beta/image.png';
-// import test_image_2 from '../image_beta/image_2.png';
-// import test_image_3 from '../image_beta/image.png';
-
-
-import { toast } from 'react-toastify';
-// import RemoveBackground from '../ChromaKeyTest.jsx';
-// import * as bodyPix from "@tensorflow-models/body-pix";
-// import "@tensorflow/tfjs";
-
 export default function CaptureScreen({ onCapture }) {
-    // const [bgImage, setBgImage] = useState(localStorage.getItem("back_3") || `url(${back_img})`);
     const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3 } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
-    // const imagesLenght = currentCanvas.objects.filter(object => object.type === 'image' && object.src === '').reduce((max, obj) => Math.max(max, obj.numberImage), 0);
     usePageNavigation();
     const canvasRefDataImage = useRef(null);
     const canvasRefMain = useRef(null);
@@ -51,27 +34,6 @@ export default function CaptureScreen({ onCapture }) {
     const [imagesLenght, setImagesLenght] = useState(0);
     const clearedNumbers = new Set(); // Используем Set для исключения повторений
     let uniqueClearedNumbers = [];
-    // useEffect(() => {
-    //     const fetchImage = async () => {
-    //         try {
-    //             const image = await invoke('get_image_path', { path: `background/3_background` })
-    //             const url_image = `url(${convertFileSrc(image)})`;
-    //             setBgImage(url_image);
-    //             if (image && image.trim() !== "") {
-    //                 setBgImage(url_image);
-    //                 localStorage.setItem("back_3", url_image);
-    //             } else {
-    //                 throw new Error("Изображение не найдено");
-    //             }
-    //         } catch (err) {
-    //             localStorage.removeItem("back_3");
-    //             setBgImage(`url(${back_img})`);
-    //             console.log(err);
-    //         }
-    //     };
-
-    //     fetchImage();
-    // },[]);
 
     const drawBackImage = useCallback(() => {
         if (!chromokey.backgroundImage.src) return;
@@ -404,7 +366,7 @@ export default function CaptureScreen({ onCapture }) {
                                             {isCameraReady && (
                                                 <div style={{ width: 630, height: 630, position: 'relative' }}>
                                                     <canvas className='rounded-md' ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                                    <canvas className='rounded-md' ref={canvasRefMain} width="630" height="630" style={{ position: 'absolute', zIndex: 2 }} />
+                                                    <canvas className='rounded-md' ref={canvasRefMain} width="630" height="630" style={{ position: 'absolute', zIndex: 2, scale: '-1 1' }} />
                                                 </div>
                                             )}
                                             {isCameraReady && isShooting && (
@@ -424,6 +386,7 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
+<<<<<<< HEAD
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900'  onClick={handleBack} disabled={isButtonDisabled}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
@@ -452,14 +415,30 @@ export default function CaptureScreen({ onCapture }) {
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                                 </button>
                                             )}
+=======
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700'  onClick={handleBack} disabled={isButtonDisabled}>
+                                                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                            </button>
+                                            <div className='flex justify-center items-center'>
+                                                {!isShooting && forCapture && (
+                                                    <button onClick={startCountdown}>
+                                                        <img src={cameraCapture} className='w-72' alt="Capture Photo" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+                                                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                            </button>
+>>>>>>> e8e92c9f417df98db5cc16da22d2607c7facf776
                                         </div>
                                     </div>
                                 ) : (
                                     <div className='flex flex-col items-center w-full gap-10'>
-                                        {/* <img src={capturedImage} className='object-cover' style={{ width: 530, height: 530, position: 'relative' }} /> */}
                                         <canvas ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                        <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2 }} className='border-solid border-2 capture-container rounded-md object-cover' />
+                                        <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
+<<<<<<< HEAD
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={handleBack}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
@@ -487,8 +466,24 @@ export default function CaptureScreen({ onCapture }) {
                                             {!camera.payment_enabled && (
                                                 <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }} onClick={handleBack}>
                                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+=======
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>
+                                                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                            </button>
+                                        
+                                            <div className='flex-1 flex justify-around items-center gap-20'>
+                                                <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                    <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
                                                 </button>
-                                            )}
+                                                <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                    <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
+>>>>>>> e8e92c9f417df98db5cc16da22d2607c7facf776
+                                                </button>
+                                            </div>
+                                        
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                            </button>
                                         </div>
                                     </div>
                                 )}

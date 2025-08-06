@@ -168,7 +168,7 @@ export default function Timer() {
                                 id="startTime"
                                 value={workhours.start}
                                 onChange={(e) => handleWorkHoursChange('start', e.target.value)}
-                                className="text-lg"
+                                className="text-lg dark:bg-gray-800"
                             />
                         </div>
                         <div className="space-y-2">
@@ -179,7 +179,7 @@ export default function Timer() {
                                 id="endTime"
                                 value={workhours.end}
                                 onChange={(e) => handleWorkHoursChange('end', e.target.value)}
-                                className="text-lg"
+                                className="text-lg dark:bg-gray-800"
                             />
                         </div>
                     </div>
@@ -201,11 +201,10 @@ export default function Timer() {
                 </button>
                 <button onClick={saveSchedule}>Сохранить расписание</button>
             </div>
-            <div className="p-4">
+            {/* <div className="p-4">
                 <h1 className="text-xl font-bold mb-4">Настройки товара</h1>
 
                 <div className="flex gap-8">
-                    {/* Левая колонка — форма */}
                     <form
                     className="flex flex-col gap-4 w-1/2"
                     onSubmit={(e) => e.preventDefault()}
@@ -218,7 +217,7 @@ export default function Timer() {
                         step="0.01"
                         value={form.amount}
                         onChange={handleChange}
-                        className="border p-1 rounded w-full"
+                        className="border p-1 rounded w-full dark:bg-gray-800"
                         />
                     </div>
 
@@ -229,7 +228,7 @@ export default function Timer() {
                         name="item"
                         value={form.item}
                         onChange={handleChange}
-                        className="border p-1 rounded w-full"
+                        className="border p-1 rounded w-full dark:bg-gray-800"
                         />
                     </div>
 
@@ -240,7 +239,7 @@ export default function Timer() {
                         name="name_kz"
                         value={form.name_kz}
                         onChange={handleChange}
-                        className="border p-1 rounded w-full"
+                        className="border p-1 rounded w-full dark:bg-gray-800"
                         />
                     </div>
 
@@ -251,7 +250,7 @@ export default function Timer() {
                         name="name_ru"
                         value={form.name_ru}
                         onChange={handleChange}
-                        className="border p-1 rounded w-full"
+                        className="border p-1 rounded w-full dark:bg-gray-800"
                         />
                     </div>
 
@@ -264,7 +263,6 @@ export default function Timer() {
                     </button>
                     </form>
 
-                    {/* Правая колонка — выбор QR */}
                     <div className="flex items-center justify-center w-1/2">
                     <label
                         style={{
@@ -283,12 +281,12 @@ export default function Timer() {
                         type="file"
                         accept="image/*"
                         onChange={handleQRChange}
-                        className="hidden"
+                        className="hidden dark:bg-gray-800"
                         />
                     </label>
                     </div>
                 </div>
-                </div>
+                </div> */}
             <ToastContainer />
         </AdminShell>
     )

@@ -1,8 +1,6 @@
-import React, { Children, useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
-// import MainPage from './admin/TemplateEditor.jsx';
 import MainPage from './pages/MainPage.jsx';
-// import MainPage from './ChromaKeyTest.jsx';
 import TemplatePage from './pages/TemplatePage.jsx';
 import CapturePage from './pages/CapturePage.jsx';
 import PrintPage from './pages/PrintPage.jsx';
@@ -15,13 +13,9 @@ import Timer from './admin/Timer.jsx';
 import Editor from './admin/Editor.jsx';
 import Chromakey from './admin/ChromaKey.jsx';
 import PrinterPopup from './components/PrinterPopup.jsx';
-import { usePageNavigation } from './hooks/usePageNavigation.js';
 import ListPage from './pages/ListPage.jsx';
 import CheckLicensePage from './pages/CheckLicensePage.jsx';
 import { useStore } from './admin/store.js';
-import { invoke } from '@tauri-apps/api/tauri';
-import PaymentPage from './pages/PaymentPage.jsx';
-import PaymentFailed from './pages/PaymentFailed.jsx';
 
 export function CheckLicense({ children }) {
   const { license } = useStore();
@@ -68,8 +62,6 @@ export default function App(){
                         <Routes>
                           <Route path="/" element={<MainPage active={showPopup} setLoading={setLoading} loading={loading} setActive={setShowPopup} design={design}/>}/>
                           <Route path="/template" element={<TemplatePage design={design} setDesign={setDesign} />} />
-                          <Route path="/payment" element={<PaymentPage />} />
-                          <Route path="/payment-failed" element={<PaymentFailed />} />
                           <Route path="/capture" element={<CapturePage onCapture={setImages}/>} />
                           <Route path="/print" element={<PrintPage design={design} images={images} onPrint={() => {}} setDesign={setDesign} />} />
                           <Route path="/list" element={<ListPage />} />

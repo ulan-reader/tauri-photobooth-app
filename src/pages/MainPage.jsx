@@ -1,22 +1,18 @@
-import { Link, NavLink, resolvePath, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from 'react';
 import '../App.css';
 import main_icon from '../assets/main_camera_icon.png';
-import { toast,ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
-import { invoke, convertFileSrc } from "@tauri-apps/api/tauri";
-import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/tauri";
 import { useStore } from "../admin/store";
-// import ChromakeyTest from "../ChromaKeyTest";
-// import image_beta from '../image_beta/IMG_6700.JPG'
-import { saveCanvasData, saveCanvasImage, saveCanvasTemplate } from "../utils/canvasUtils";
-import { drawMyCanvas } from "../components/CanvasDrawer";
+import { saveCanvasTemplate } from "../utils/canvasUtils";
 import { Settings } from "lucide-react"
-import { set } from "lodash";
 import printer from "../assets/printer.png";
 import backgroundUrl from "../assets/defaultImage.png";
-import { appDir, configDir } from '@tauri-apps/api/path';
 import { fetchProjects, fetchTemplate, getReferences, getSavedPrinter, handleSaveProject, updateSettings } from "../utils/projectConfig.js";
+import { emit } from '@tauri-apps/api/event';
+import { Power } from "lucide-react"
 
 export default function MainPage({ active, loading, setLoading, setActive, design }) {
     const { license, project, setProject, chromokey, setChromokey, reference, setReferences, setCamera, setCanvasData, currentCanvasId, canvases, switchCanvas, background_image_1, setBackgroundImage } = useStore();
@@ -32,12 +28,21 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
     const [projects, setProjects] = useState([]);
     const [newProjectName, setNewProjectName] = useState('');
     const [selectedProject, setSelectedProject] = useState(null);
+    const [menuVisible, setMenuVisible] = useState(false);
+
+    const toggleMenu = async () => {
+        setMenuVisible(!menuVisible);
+        if (menuVisible) {
+            emit('show_menu');
+        } else {
+            emit('hide_menu');
+        }
+        // await appWindow.setMenuVisible(visible);
+    };
     
     const fetchSavedProject = async () => {
         try {
             const savedProjectName = await invoke('load_project_name');
-            // console.log('Saved project name:', savedProjectName);
-            // setSelectedProject({ name: savedProjectName });
             handleSaveProject({ name: savedProjectName }, setProject, setActive, setBackgroundImage, backgroundUrl);
             updateSettings(setChromokey, setCamera, backgroundUrl);
             getReferences(setReferences);
@@ -51,7 +56,6 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
 
     useEffect(() => {
         if (project.isCurrent && project.updateStatus) {
-            // fetchSavedProject();
             console.log('Start ');
             fetchProjects(setProjects);
         }
@@ -59,11 +63,9 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
             const save = async () => {
                 await fetchSavedProject();
                 console.log('Start saved');
-                // await handleSave();
             }
 
             save();
-            // fetchProjects(setProjects)
         }
         
         
@@ -88,7 +90,7 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
         setProjects((prevProjects) => 
             prevProjects.map((project) => ({
                 ...project,
-                is_used: project.id === id, // Только у выбранного проекта is_used = true
+                is_used: project.id === id,
             }))
         );
     
@@ -172,8 +174,13 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                         {/* <div style={word}><button onClick={() => navigate('/template')} >НАЧАТЬ ФОТОСЕССИЮ</button></div> */}
                         <canvas ref={canvasRefForSelect} style={{ width: '400px', height: '600px', display: 'none'}} />
                     </div>
-                    <div className="w-28">
+                    <div className="absolute right-16 top-2/5 w-28">
                         { chromokey.printer_visible && <NavLink to="/list"><img className="w-28" src={printer} alt="" /></NavLink> }
+                    </div>
+                    <div className="absolute right-10 top-10 w-28 opacity-10">
+                        <button onClick={() => toggleMenu()} className="col-start-3 justify-self-end p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                            {menuVisible ? <Power className="w-6 h-6 text-red-500" /> : <Power className="w-6 h-6 text-gray-600 dark:text-gray-400" />}
+                        </button>
                     </div>
                 </div>
                 ) }

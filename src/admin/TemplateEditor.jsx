@@ -18,7 +18,8 @@ const props = {
 export default function TemplateEditor() {
     const navigate = useNavigate();
     usePageNavigation();
-
+    const handleSize = 16;
+    const resizingObjectRef = useRef(null);
     const { reference, setReferences, chromokey, setChromokey, setProject, addObject, setCanvasProps, canvases, currentCanvasId, updateObjectProps, removeObject, addCanvas, removeCanvas, switchCanvas, setCanvasData, addCanvasFromTemplate } = useStore();
     const [activeTab, setActiveTab] = useState('shapes');
     const canvasRef = useRef(null);
@@ -31,7 +32,23 @@ export default function TemplateEditor() {
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [canvasTemplateName, setCanvasTemplateName] = useState('');
     const canvasTemplate = JSON.parse(localStorage.getItem('canvasTemplates'));
+    const [resizeHandle, setResizeHandle] = useState(null);
+    const [selectedObjects, setSelectedObjects] = useState([]);
+    const [groupedObjects, setGroupedObjects] = useState([]);
+    const [isDraggingGroup, setIsDraggingGroup] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
     // const canvasTemplate = canvasTemplates ? canvasTemplates : [];
+    const [dragCoords, setDragCoords] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const arrows = {
+        'top-left': '↖',
+        'top': '↑',
+        'top-right': '↗',
+        'right': '→',
+        'bottom-right': '↘',
+        'bottom': '↓',
+        'bottom-left': '↙',
+        'left': '←',
+    };
 
     useEffect(() => {
         if (showTemplateModel) {
@@ -72,8 +89,14 @@ export default function TemplateEditor() {
         if (clickedObjects.length > 0) {
             const topObject = clickedObjects.reduce((highest, obj) => {
                 return (highest.zIndex > obj.zIndex) ? highest : obj;            
-            }); 
+            });
             setSelectedObjectId(topObject.id);
+            setDragCoords({
+                x: topObject.left,
+                y: topObject.top,
+                width: topObject.width,
+                height: topObject.height,
+            });
         } else {
             setSelectedObjectId(null);
         }
@@ -230,6 +253,78 @@ export default function TemplateEditor() {
         }
     };
 
+    const getCursorForHandle = (handle) => {
+        switch (handle) {
+            case 'top-left':
+            case 'bottom-right':
+                return 'nwse-resize';
+            case 'top-right':
+            case 'bottom-left':
+                return 'nesw-resize';
+            case 'top':
+            case 'bottom':
+                return 'ns-resize';
+            case 'left':
+            case 'right':
+                return 'ew-resize';
+            default:
+                return 'default';
+        }
+    };
+
+    
+    const isInsideAnyHandle = (x, y, obj) => {
+        const handles = getHandlePositions(obj);
+        for (const [position, pos] of Object.entries(handles)) {
+            const left = pos.x - handleSize / 2;
+            const top = pos.y - handleSize / 2;
+            if (x >= left && x <= left + handleSize && y >= top && y <= top + handleSize) {
+                return position; // Название ручки, например: 'top-left'
+            }
+        }
+        return null;
+    };
+
+    const getHandlePositions = (obj) => {
+        const { left, top, width, height } = obj;
+        const right = left + width;
+        const bottom = top + height;
+        const centerX = left + width / 2;
+        const centerY = top + height / 2;
+
+        return {
+            'top-left': { x: left, y: top },
+            'top': { x: centerX, y: top },
+            'top-right': { x: right, y: top },
+            'right': { x: right, y: centerY },
+            'bottom-right': { x: right, y: bottom },
+            'bottom': { x: centerX, y: bottom },
+            'bottom-left': { x: left, y: bottom },
+            'left': { x: left, y: centerY },
+        };
+    };
+
+    const drawResizeHandles = (ctx, obj) => {
+        const handles = getHandlePositions(obj);
+
+        Object.entries(handles).forEach(([key, pos]) => {
+            // Рисуем белый квадрат с рамкой
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.fillRect(pos.x - handleSize / 2, pos.y - handleSize / 2, handleSize, handleSize);
+            ctx.strokeRect(pos.x - handleSize / 2, pos.y - handleSize / 2, handleSize, handleSize);
+
+            // Рисуем стрелку
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(arrows[key], pos.x, pos.y);
+        });
+    };
+
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
@@ -268,51 +363,17 @@ export default function TemplateEditor() {
 
         
 
-        const drawMarkers = (ctx, obj) => {
-            if (!obj) return;
-
-            const borderThickness = 8; // Толщина линии
-            const lineLength = obj.width / 2;
-            const topLineLength = obj.height / 2; // Длина линий на каждом углу
-
-            ctx.strokeStyle = 'black'; // Цвет линии
-            ctx.lineWidth = borderThickness;
-
-            // Линии сверху
-            ctx.beginPath();
-            ctx.moveTo(obj.left - 4, obj.top); // Верхний левый
-            ctx.lineTo(obj.left + lineLength, obj.top); // Верхний левый горизонтально
-            ctx.moveTo(obj.left, obj.top); // Верхний левый
-            ctx.lineTo(obj.left, obj.top + topLineLength); // Верхний левый вертикально
-
-            ctx.moveTo(obj.left + obj.width + 4, obj.top); // Верхний правый
-            ctx.lineTo(obj.left + obj.width - lineLength, obj.top); // Верхний правый горизонтально
-            ctx.moveTo(obj.left + obj.width, obj.top); // Верхний правый
-            ctx.lineTo(obj.left + obj.width, obj.top + topLineLength); // Верхний правый вертикально
-
-            // Линии снизу
-            ctx.moveTo(obj.left - 4, obj.top + obj.height); // Нижний левый
-            ctx.lineTo(obj.left + lineLength, obj.top + obj.height); // Нижний левый горизонтально
-            ctx.moveTo(obj.left, obj.top + obj.height); // Нижний левый
-            ctx.lineTo(obj.left, obj.top + obj.height - topLineLength); // Нижний левый вертикально
-
-            ctx.moveTo(obj.left + obj.width + 4, obj.top + obj.height); // Нижний правый
-            ctx.lineTo(obj.left + obj.width - lineLength, obj.top + obj.height); // Нижний правый горизонтально
-            ctx.moveTo(obj.left + obj.width, obj.top + obj.height); // Нижний правый
-            ctx.lineTo(obj.left + obj.width, obj.top + obj.height - topLineLength); // Нижний правый вертикально
-
-            ctx.stroke();
-        };
-    
+        
+        
         if (currentCanvas) {
             // Рисуем основной холст
             drawMyCanvas(ctx, canvas, currentCanvas, true, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, false);
     
             // Рисуем выделение только на основном холсте
-            if (selectedObjectId) {
+            if (selectedIds.length === 1) {
                 const selectedObject = currentCanvas.objects.find(obj => obj.id === selectedObjectId);
                 if (selectedObject) {
-                    drawMarkers(ctx, selectedObject);
+                    drawResizeHandles(ctx, selectedObject);
                 }
             }
     
@@ -320,19 +381,45 @@ export default function TemplateEditor() {
             drawMyCanvas(ctxSel, canvasSel, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
             drawMyCanvas(ctxSel, canvasSel, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, true, false);
         }
-    }, [currentCanvas, selectedObjectId]);
+    }, [currentCanvas, selectedObjectId, selectedIds]);
 
     const [isDragging, setIsDragging] = useState(false); // To check if we're dragging
     const [draggedObjectId, setDraggedObjectId] = useState(null); // To store which object is being dragged
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // To track the offset of the drag start
 
-    // async function getAppDataPath() {
-    //     const path = await configDir();
-    //     return path;
-    // }
+    function drawGuides(ctx, canvas, obj) {
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 2]);
+
+        // вертикальные
+        ctx.beginPath();
+        ctx.moveTo(obj.left, 0);
+        ctx.lineTo(obj.left, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(obj.left + obj.width, 0);
+        ctx.lineTo(obj.left + obj.width, canvas.height);
+        ctx.stroke();
+
+        // горизонтальные
+        ctx.beginPath();
+        ctx.moveTo(0, obj.top);
+        ctx.lineTo(canvas.width, obj.top);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, obj.top + obj.height);
+        ctx.lineTo(canvas.width, obj.top + obj.height);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
 
         const handleMouseDown = (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -340,6 +427,21 @@ export default function TemplateEditor() {
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
+            canvas.style.cursor = 'move';
+
+            // === [1] Проверка на попадание в resize handle ===
+            for (const obj of currentCanvas.objects) {
+                const handle = isInsideAnyHandle(x, y, obj);
+                if (handle) {
+                    resizingObjectRef.current = obj;
+                    setResizeHandle(handle);
+                    setDraggedObjectId(obj.id);
+                    setIsDragging(true);
+                    return;
+                }
+            }
+
+            // === [2] Иначе — обычное перемещение (drag)
             const clickedObjects = currentCanvas.objects.filter(obj => {
                 return (
                     x >= obj.left &&
@@ -348,35 +450,145 @@ export default function TemplateEditor() {
                     y <= obj.top + obj.height
                 );
             });
+
             if (clickedObjects.length > 0) {
                 const topObject = clickedObjects.reduce((maxObj, obj) =>
                     obj.zIndex > maxObj.zIndex ? obj : maxObj
                 );
+
+                if (e.shiftKey) {
+                    // Множественное выделение
+                    setSelectedIds(prev => [...new Set([...prev, topObject.id])]);
+                } else {
+                    setSelectedIds([topObject.id]);
+                }
+                
                 setIsDragging(true);
                 setDraggedObjectId(topObject.id);
                 setDragOffset({ x: x - topObject.left, y: y - topObject.top });
             } else {
+                setSelectedIds([]);
                 setSelectedObjectId(null);
             }
         };
 
+
         const handleMouseMove = (e) => {
-            if (!isDragging || !draggedObjectId) return;
-            setSelectedObjectId(draggedObjectId);
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
+
+            // === [A] Курсор, если не тянем ===
+            if (!isDragging) {
+                let hoveredHandle = null;
+                for (const obj of currentCanvas.objects) {
+                    const handle = isInsideAnyHandle(x, y, obj);
+                    if (handle) {
+                        hoveredHandle = handle;
+                        break;
+                    }
+                }
+                canvas.style.cursor = hoveredHandle ? getCursorForHandle(hoveredHandle) : 'default';
+                return; // НЕ продолжаем дальше, т.к. не тянем
+            }
+
+            // === [B] Если тянем — либо ресайз, либо drag
+            if (!draggedObjectId) return;
+
+            // === [1] РЕСАЙЗ ===
+            if (resizeHandle && resizingObjectRef.current) {
+                const obj = { ...resizingObjectRef.current };
+                const minSize = 20;
+                const right = obj.left + obj.width;
+                const bottom = obj.top + obj.height;
+
+                switch (resizeHandle) {
+                    case 'right':
+                        obj.width = Math.max(minSize, x - obj.left);
+                        break;
+                    case 'bottom':
+                        obj.height = Math.max(minSize, y - obj.top);
+                        break;
+                    case 'bottom-right':
+                        obj.width = Math.max(minSize, x - obj.left);
+                        obj.height = Math.max(minSize, y - obj.top);
+                        break;
+                    case 'left':
+                        const newLeft = Math.min(x, right - minSize);
+                        obj.width = right - newLeft;
+                        obj.left = newLeft;
+                        break;
+                    case 'top':
+                        const newTop = Math.min(y, bottom - minSize);
+                        obj.height = bottom - newTop;
+                        obj.top = newTop;
+                        break;
+                    case 'top-left':
+                        obj.left = Math.min(x, right - minSize);
+                        obj.top = Math.min(y, bottom - minSize);
+                        obj.width = right - obj.left;
+                        obj.height = bottom - obj.top;
+                        break;
+                    case 'top-right':
+                        obj.top = Math.min(y, bottom - minSize);
+                        obj.width = Math.max(minSize, x - obj.left);
+                        obj.height = bottom - obj.top;
+                        break;
+                    case 'bottom-left':
+                        obj.left = Math.min(x, right - minSize);
+                        obj.width = right - obj.left;
+                        obj.height = Math.max(minSize, y - obj.top);
+                        break;
+                }
+
+                updateObject(draggedObjectId, obj);
+                const movedObject = currentCanvas.objects.find(obj => obj.id === draggedObjectId);
+                if (movedObject) {
+                    requestAnimationFrame(() => {
+                        drawGuides(ctx, canvas, movedObject);
+                    });
+                }
+                return;
+            }
+
+            // === [2] ДРАГ ===
+            setSelectedObjectId(draggedObjectId);
+
             const newLeft = Math.round(x - dragOffset.x);
             const newTop = Math.round(y - dragOffset.y);
-            // Update the object's position
-            updateObject(draggedObjectId, { left: newLeft, top: newTop });
+            const dx = newLeft - currentCanvas.objects.find(obj => obj.id === draggedObjectId).left;
+            const dy = newTop - currentCanvas.objects.find(obj => obj.id === draggedObjectId).top;
+
+            selectedIds.forEach(id => {
+                const obj = currentCanvas.objects.find(o => o.id === id);
+                if (obj) {
+                    updateObject(id, {
+                        left: obj.left + dx,
+                        top: obj.top + dy
+                    });
+                }
+            });
+
+            const movedObject = currentCanvas.objects.find(obj => obj.id === draggedObjectId);
+            if (movedObject) {
+                requestAnimationFrame(() => {
+                    drawGuides(ctx, canvas, movedObject);
+                });
+            }
         };
 
+
+
         const handleMouseUp = () => {
+            resizingObjectRef.current = null;
+            setResizeHandle(null);
             setIsDragging(false);
             setDraggedObjectId(null);
+            canvas.style.cursor = 'default';
+            setDragCoords(null);
+
         };
 
         canvas.addEventListener('mousedown', handleMouseDown);
@@ -634,7 +846,7 @@ export default function TemplateEditor() {
                                     <label className="text-sm font-medium">Название</label>
                                     <input
                                         type="text"
-                                        className="w-full border border-gray-300 rounded px-3 py-2"
+                                        className="w-full border border-gray-300 rounded px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
                                         value={canvasTemplateName ?? ''}
                                         onChange={(e) => setCanvasTemplateName(e.target.value)}
                                     />
@@ -789,7 +1001,7 @@ export default function TemplateEditor() {
                                         <input type="text"
                                             value={currentCanvas?.objects.find(obj => obj.id === selectedObjectId)?.nameObject || ''}
                                             onChange={(e) => updateObject(selectedObjectId, { nameObject: e.target.value })}
-                                            className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-40'
+                                            className='h-8 px-2 border border-gray-300 dark:border-gray-600 rounded-md w-40 dark:bg-gray-800'
                                         />
                                     </div>
                                     {/* <div className='flex justify-center px-2'>
@@ -845,7 +1057,7 @@ export default function TemplateEditor() {
                                                     type='number'
                                                     onChange={(e) => setCanvasProps(currentCanvas.id, { width: e.target.value })}
                                                     value={currentCanvas.canvasProps.width}
-                                                    className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                                                    className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                                             </div>
                                             <div className='flex gap-2 items-center justify-center'>
                                                 <label className='w-4 flex items-center justify-center'>H</label>
@@ -855,12 +1067,12 @@ export default function TemplateEditor() {
                                                     type='number'
                                                     onChange={(e) => setCanvasProps(currentCanvas.id, { height: e.target.value })}
                                                     value={currentCanvas.canvasProps.height}
-                                                    className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16'/>
+                                                    className='h-8 px-1 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                                             </div>
                                             <div className='flex gap-5 items-center  col-span-3'>
                                                 <p>Цвет заливки</p>
                                                 <input
-                                                    className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16'
+                                                    className='h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'
                                                     type="color"
                                                     value={currentCanvas.canvasProps.backgroundColor}
                                                     onChange={(e) => setCanvasProps(currentCanvas.id, { backgroundColor: e.target.value })}
@@ -870,7 +1082,7 @@ export default function TemplateEditor() {
                                             <div className='flex gap-5 items-center  col-span-3'>
                                                 <p>Название холста</p>
                                                 <textarea
-                                                    className='p-2 h-auto border border-gray-300 dark:border-gray-600 rounded-md w-48 text-wrap'
+                                                    className='p-2 h-auto border border-gray-300 dark:border-gray-600 rounded-md w-48 text-wrap dark:bg-gray-800'
                                                     rows={1}
                                                     value={currentCanvas.canvasProps.name || 'Нету названия'}
                                                     onChange={(e) => setCanvasProps(currentCanvas.id, { name: e.target.value || 'Нету названия' })}
