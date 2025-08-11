@@ -23,12 +23,13 @@ import { Settings } from "lucide-react"
 
 export default function PrintPage({ images, design, setDesign }) {
   // const [bgImage, setBgImage] = useState(localStorage.getItem("back_4") || `url(${back_img})`);
-  const { canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference, background_image_4 } = useStore();
+  const { canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference, background_image_4, buttonsColor } = useStore();
   const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
   usePageNavigation();
   const canvasRef = useRef(null);
   const navigate = useNavigate();
   const [ isImage, setIsImage ] = useState(null);
+  const [ isPrinting, setIsPrinting ] = useState(false);
   // const imgES = [test_image_1, test_image_2, test_image_3];
 
   // useEffect(() => {
@@ -100,6 +101,7 @@ export default function PrintPage({ images, design, setDesign }) {
   }
 
   const handlePrint = async () => {
+    setIsPrinting(true);
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -132,40 +134,46 @@ export default function PrintPage({ images, design, setDesign }) {
     <div className="flex justify-center items-center">
       <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{width: '1280px', height: '1024px', backgroundImage: background_image_4}}>
         <div className='back-img'></div>
-        <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
-          <div className="w-full flex flex-col gap-9 justify-center items-center px-20">
-            <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-0 hover:opacity-100">
-                <Settings size={30} /> {/* Отображаем иконку шестеренки */}
-            </NavLink>
-            <div className='flex flex-col gap-3'>
-              {/* <button className='h-9 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }}>
-                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-              </button> */}
-              <div className='grid grid-cols-3 items-center'>
-                <div className='w-28'></div>
-                <div className='relative items-center box_print' style={{width: '400px' }}>
-                  <div className='bg_print' ></div>
-                  <div>
-                    <div  className='absolute bottom-1 left-0 w-full h-full flex gap-10 justify-center items-center z-10'>
-                      <canvas
-                        ref={canvasRef}
-                        width={currentCanvas.canvasProps.width}
-                        height={currentCanvas.canvasProps.height}
-                        style={{ maxWidth: '580px', maxHeight: '700px', display: 'block'}}
-                      ></canvas>
+        {!isPrinting ? (
+          <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
+            <div className="w-full flex flex-col gap-9 justify-center items-center px-20">
+              <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-20 hover:opacity-100">
+                  <Settings size={30} /> {/* Отображаем иконку шестеренки */}
+              </NavLink>
+              <div className='flex flex-col gap-3'>
+                {/* <button className='h-9 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{ visibility: 'hidden', background: buttonsColor.main}}>
+                  <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                </button> */}
+                <div className='grid grid-cols-3 items-center'>
+                  <div className='w-28'></div>
+                  <div className='relative items-center box_print' style={{width: '400px' }}>
+                    {/* <div className='bg_print' style={{ width: currentCanvas.canvasProps.width, height: currentCanvas.canvasProps.height}} ></div> */}
+                    <div>
+                      <div  className='absolute bottom-1 left-0 w-full h-full flex gap-10 justify-center items-center z-10'>
+                        <canvas
+                          ref={canvasRef}
+                          width={currentCanvas.canvasProps.width}
+                          height={currentCanvas.canvasProps.height}
+                          style={{ maxWidth: '580px', maxHeight: '700px', display: 'block'}}
+                        ></canvas>
+                      </div>
                     </div>
                   </div>
+                  <button className='h-4 flex justify-center items-center rounded-lg' onClick={handlePrint}><img className='rounded-lg w-36 ml-28' src={printer} alt="" /></button>
                 </div>
-                <button className='h-4 flex justify-center items-center rounded-lg' onClick={handlePrint}><img className='rounded-lg w-36 ml-28' src={printer} alt="" /></button>
               </div>
+              {/* <div className=' flex justify-start items-center w-full'>
+                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={backPage}>
+                  <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                </button>
+              </div> */}
             </div>
-            {/* <div className=' flex justify-start items-center w-full'>
-              <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={backPage}>
-                <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-              </button>
-            </div> */}
           </div>
-        </div>
+        ) : (
+          <div className='absolute left-0 w-full h-20 flex justify-center items-center px-10 z-10' style={{top: '50%'}}>
+            <div style={{textAlign: 'center', fontSize: '60px', color: buttonsColor.mainText}}>Подождите идеть печать...</div>
+          </div>
+        )}
       </div>
     </div>
   );

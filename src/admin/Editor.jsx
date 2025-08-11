@@ -52,7 +52,7 @@ export default function Editor({ isDarkMode }) {
     usePageNavigation();
     const [whyBg, setWhyBg] = useState(1);
     // const [bgImage, setBgImage] = useState(localStorage.getItem(`back_${whyBg}`));
-    const { setBackgroundImage, project } = useStore();
+    const { setBackgroundImage, project, buttonsColor, setButtonsColor } = useStore();
     
     const [property, setProperty] = useState(filterElements[0]);
     const [details, setDetails] = useState(null);
@@ -389,9 +389,15 @@ export default function Editor({ isDarkMode }) {
                     </button>
                     <button
                         onClick={() => setActiveTab("transform")}
-                        className={`px-4 py-2 rounded-r-full ${activeTab === "transform" ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'} hover:bg-blue-700 transition-colors duration-300`}
+                        className={`px-4 py-2 ${activeTab === "transform" ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'} hover:bg-blue-700 transition-colors duration-300`}
                     >
                         Трансформация
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("buttons")}
+                        className={`px-4 py-2 rounded-r-full ${activeTab === "buttons" ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'} hover:bg-blue-700 transition-colors duration-300`}
+                    >
+                        Настройки кнопок
                     </button>
                 </div>
                 {activeTab === "filters" && (
@@ -450,6 +456,72 @@ export default function Editor({ isDarkMode }) {
                             {preset?.label}
                             </button>
                         ))}
+                        </div>
+                    </div>
+                    </>
+                )}
+                {activeTab === "buttons" && (
+                    <>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет кнопки:</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.main} 
+                                onChange={(e) => { setButtonsColor({ main: e.target.value }) }}
+                            />
+                        </div>
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет текста кнопки:</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.mainText} 
+                                onChange={(e) => { setButtonsColor({ mainText: e.target.value }) }}
+                            />
+                        </div>
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет кнопки "Да":</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.yesButton} 
+                                onChange={(e) => { setButtonsColor({ yesButton: e.target.value }) }}
+                            />
+                        </div>
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет текста в кнопке "Да":</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.yesButtonText} 
+                                onChange={(e) => { setButtonsColor({ yesButtonText: e.target.value }) }}
+                            />
+                        </div>
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет кнопки "Нет":</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.noButton} 
+                                onChange={(e) => { setButtonsColor({ noButton: e.target.value }) }}
+                            />
+                        </div>
+                        <div className="flex flex-row items-center justify-start gap-2">
+                            <label htmlFor="chromakey-color">Выберите цвет текста в кнопке "Нет":</label>
+                            <input 
+                                type="color"
+                                className="h-8 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800"
+                                id="chromakey-color"
+                                value={buttonsColor.noButtonText} 
+                                onChange={(e) => { setButtonsColor({ noButtonText: e.target.value }) }}
+                            />
                         </div>
                     </div>
                     </>

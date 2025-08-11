@@ -7,10 +7,11 @@ import back_img from '../assets/defaultImage_2.png';
 import { invoke, convertFileSrc } from "@tauri-apps/api/tauri"
 import { useStore } from '../admin/store.js';
 import { toast, ToastContainer } from 'react-toastify';
+import { background } from '@chakra-ui/react';
 
 export default function TemplatePage({ design, setDesign }) {
     // const [bgImage, setBgImage] = useState(localStorage.getItem("back_2") || `url(${back_img})`);
-    const { canvases, switchCanvas, currentCanvasId, camera, setCamera, background_image_2 } = useStore();
+    const { canvases, switchCanvas, currentCanvasId, camera, setCamera, background_image_2, buttonsColor } = useStore();
     const availableCanvases = canvases.filter((canvas) => canvas.canvasProps.available === true);
     const navigate = useNavigate();
     usePageNavigation();
@@ -28,14 +29,14 @@ export default function TemplatePage({ design, setDesign }) {
             console.log("init camera")
            
         
-            if (!camera.isCameraOn) {
-                await invoke('initialize_camera');
-                setCamera({ isCameraOn: true });
-            }
-            navigate('/capture')
+            // if (!camera.isCameraOn) {
+            //     await invoke('initialize_camera');
+            //     setCamera({ isCameraOn: true });
+            // }
+            navigate('/print')
 
-            setCamera({ isLiveView: true });
-            await invoke('start_live_view');
+            // setCamera({ isLiveView: true });
+            // await invoke('start_live_view');
         } catch(error) {
             // toast.error("Камера не подключена");
             console.log("Error: ", error);
@@ -114,7 +115,7 @@ export default function TemplatePage({ design, setDesign }) {
                                 />
                             </div>
                             <div className='flex justify-between items-center'>
-                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={() => navigate('/')}>
+                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main, color: buttonsColor.mainText}} onClick={() => navigate('/')}>
                                     <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                 </button>
                                 <button
@@ -129,7 +130,7 @@ export default function TemplatePage({ design, setDesign }) {
                                 >
                                     <p className='w-44 text-black text-2xl font-medium'>ЧЕРНО-БЕЛОЕ ФОТО</p>
                                 </button>
-                                <button className='w-36 h-20 cursor-pointer flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white text-2xl bg-blue-900' onClick={handleNext}>
+                                <button className='w-36 h-20 cursor-pointer flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white text-2xl' style={{background: buttonsColor.main, color: buttonsColor.mainText}} onClick={handleNext}>
                                     ДАЛЕЕ <img className='w-5' src={templateTriangle} alt="Forward" />
                                 </button>
                             </div>

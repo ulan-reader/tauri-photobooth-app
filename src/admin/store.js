@@ -101,6 +101,17 @@ export const useStore = create(devtools((set) => ({
 
   setProject: (updates) => set((state) => ({ project: { ...state.project, ...updates } })),
 
+  buttonsColor: {
+    main: '#4a90e2',
+    mainText: '#ffffff',
+    yesButton: '#4caf50',
+    yesButtonText: '#ffffff',
+    noButton: '#f44336',
+    noButtonText: '#ffffff',
+  },
+
+  setButtonsColor: (updates) => set((state) => ({ buttonsColor: { ...state.buttonsColor, ...updates } })),
+  
   canvases: [
     {
       id: 1,

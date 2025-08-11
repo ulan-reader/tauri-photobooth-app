@@ -10,7 +10,7 @@ import { useStore } from '../admin/store.js';
 import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
 
 export default function CaptureScreen({ onCapture }) {
-    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3 } = useStore();
+    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3, buttonsColor } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
     usePageNavigation();
     const canvasRefDataImage = useRef(null);
@@ -391,7 +391,7 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900'  onClick={handleBack} disabled={isButtonDisabled}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack} disabled={isButtonDisabled}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                             <div className='flex justify-center items-center'>
@@ -402,7 +402,7 @@ export default function CaptureScreen({ onCapture }) {
                                                 )}
                                             </div>
                                             
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{ visibility: 'hidden', background: buttonsColor.main}}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
@@ -412,20 +412,20 @@ export default function CaptureScreen({ onCapture }) {
                                         <canvas ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
                                         <img src={capturedImage} alt='Captured' style={{ width: 863, height: 763, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         
                                             <div className='flex-1 flex justify-around items-center gap-20'>
-                                                <button className='text-red-760 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                <button className='text-red-760 border-2 rounded-3xl px-12 py-8 font-bold' style={{color: yesButtonText, background: buttonsColor.yesButton}} onClick={reshootPhoto} disabled={isButtonDisabled}>
                                                     <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
                                                 </button>
-                                                <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                <button className='border-2 rounded-3xl px-12 py-8 font-bold' style={{color: noButtonText, background: buttonsColor.noButton}} onClick={savePhoto} disabled={isButtonDisabled}>
                                                     <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
                                                 </button>
                                             </div>
                                         
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-blue-900' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{ visibility: 'hidden', background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
