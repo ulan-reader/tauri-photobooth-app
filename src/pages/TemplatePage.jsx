@@ -29,14 +29,14 @@ export default function TemplatePage({ design, setDesign }) {
             console.log("init camera")
            
         
-            // if (!camera.isCameraOn) {
-            //     await invoke('initialize_camera');
-            //     setCamera({ isCameraOn: true });
-            // }
-            navigate('/print')
+            if (!camera.isCameraOn) {
+                await invoke('initialize_camera');
+                setCamera({ isCameraOn: true });
+            }
+            navigate('/capture')
 
-            // setCamera({ isLiveView: true });
-            // await invoke('start_live_view');
+            setCamera({ isLiveView: true });
+            await invoke('start_live_view');
         } catch(error) {
             // toast.error("Камера не подключена");
             console.log("Error: ", error);
