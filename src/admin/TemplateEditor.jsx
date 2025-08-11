@@ -946,9 +946,6 @@ export default function TemplateEditor() {
                                         <button onClick={() => fileInputRef.current.click()}><FileImage /></button>
                                         <button onClick={() => removeShape()}><Trash2 /></button>
                                     </div>
-                                    <button onClick={() => addPhotoPlaceholder()} className="bg-blue-500 text-white p-3 rounded-lg mt-3 flex justify-center">
-                                        <Plus /> Добавить фото-заглушку
-                                    </button>
                                     <input
                                         type="file"
                                         ref={fileInputRefForSelect}
@@ -958,6 +955,9 @@ export default function TemplateEditor() {
                                     />
                                     <button onClick={() => fileInputRefForSelect.current.click()} className="bg-blue-500 text-white p-3 rounded-lg mt-3 flex justify-center">
                                         <FileImage /> Добавить шаблон на весь экран
+                                    </button>
+                                    <button onClick={() => addPhotoPlaceholder()} className="bg-blue-500 text-white p-3 rounded-lg mt-3 flex justify-center">
+                                        <Plus /> Добавить фото-заглушку
                                     </button>
                                     <div
                                         className="rounded-lg border flex justify-center items-center cursor-pointer col-span-2 w-fit h-fit mt-3"

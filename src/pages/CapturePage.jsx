@@ -40,8 +40,8 @@ export default function CaptureScreen({ onCapture }) {
 
         const bgCanvas = backgroundImageRef.current;
         const bgCtx = bgCanvas.getContext("2d");
-        bgCanvas.width = 630;
-        bgCanvas.height = 630;
+        bgCanvas.width = 860;
+        bgCanvas.height = 760;
         drawCromakeyBackgroundImage(bgCtx, bgCanvas, chromokey.backgroundImage, true)
     }, [chromokey]);
 
@@ -53,8 +53,8 @@ export default function CaptureScreen({ onCapture }) {
         image.src = base64Image;
 
         image.onload = () => {
-            canvas.width = 630;
-            canvas.height = 630;
+            canvas.width = 860;
+            canvas.height = 760;
             const canvasAspect = canvas.width / canvas.height;
             const imageAspect = image.width / image.height;
 
@@ -345,28 +345,33 @@ export default function CaptureScreen({ onCapture }) {
 
     return (
         <div className="flex justify-center items-center">
-            <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{ width: '1280px', height: '1024px', backgroundImage: background_image_3 }}>
+            <div className="select-none relative bg-cover bg-center bg-black bg-no-repeat" style={{ width: '1280px', height: '1024px'}}>
+                <div className='absolute top-10 left-5 w-full h-20 flex justify-center items-center'>
+                    {images.map((img) => (
+                        <img src={img} alt="Captured" key={img} />
+                    ))}
+                </div>
                 <div className='back-img'></div>
                 <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
                     <div className='flex w-screen justify-center items-center'>
-                        <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px' }} className='absolute top-64 left-7'/>
+                        <canvas ref={canvasRefLayout} width={1280} height={1024} style={{ maxWidth: '270px', maxHeight: '400px' }} className='absolute top-64 left-7 opacity-0'/>
                         <div className='flex flex-col gap-6 items-center px-20 w-full absolute'>
                             <div className='text-5xl items-center text-center -top-5 stroke'>
-                                ЧТОБЫ СОЗДАТЬ ФОТО, <br /> НАЖМИТЕ НА КНОПКУ ПОД РАМКОЙ
+                                {/* ЧТОБЫ СОЗДАТЬ ФОТО, <br /> НАЖМИТЕ НА КНОПКУ ПОД РАМКОЙ */}
                             </div>
                             <div className='w-full'>
                                 {!isCameraReady && (
-                                    <ins className='bg-gray-800 p-5 rounded-md z-10' style={{ position: 'absolute', top: '30%', left: '32%', height: '10%', textAlign: 'center' }}>
+                                    <ins className='bg-gray-860 p-5 rounded-md z-10' style={{ position: 'absolute', top: '30%', left: '32%', height: '10%', textAlign: 'center' }}>
                                         ИДЕТ ПОДКЛЮЧЕНИЕ ФОТОКАМЕРЫ
                                     </ins>
                                 )}
                                 {!capturedImage ? (
                                     <div className='flex flex-col items-center w-full gap-10'>
-                                        <div className='border-solid border-2 capture-container rounded-md' style={{ width: 633, height: 633, position: 'relative' }}>
+                                        <div className='border-solid border-2 capture-container rounded-md' style={{ width: 863, height: 763, position: 'relative' }}>
                                             {isCameraReady && (
-                                                <div style={{ width: 630, height: 630, position: 'relative' }}>
-                                                    <canvas className='rounded-md' ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                                    <canvas className='rounded-md' ref={canvasRefMain} width="630" height="630" style={{ position: 'absolute', zIndex: 2, scale: '-1 1' }} />
+                                                <div style={{ width: 860, height: 760, position: 'relative' }}>
+                                                    <canvas className='rounded-md' ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
+                                                    <canvas className='rounded-md' ref={canvasRefMain} width="860" height="760" style={{ position: 'absolute', zIndex: 2, scale: '-1 1' }} />
                                                 </div>
                                             )}
                                             {isCameraReady && isShooting && (
@@ -386,7 +391,7 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700'  onClick={handleBack} disabled={isButtonDisabled}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-760'  onClick={handleBack} disabled={isButtonDisabled}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                             <div className='flex justify-center items-center'>
@@ -397,22 +402,22 @@ export default function CaptureScreen({ onCapture }) {
                                                 )}
                                             </div>
                                             
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-760' style={{ visibility: 'hidden' }}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className='flex flex-col items-center w-full gap-10'>
-                                        <canvas ref={backgroundImageRef} width="630" height="630" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                        <img src={capturedImage} alt='Captured' style={{ width: 633, height: 633, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
+                                        <canvas ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
+                                        <img src={capturedImage} alt='Captured' style={{ width: 863, height: 763, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-760' onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         
                                             <div className='flex-1 flex justify-around items-center gap-20'>
-                                                <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                <button className='text-red-760 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
                                                     <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
                                                 </button>
                                                 <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
@@ -420,7 +425,7 @@ export default function CaptureScreen({ onCapture }) {
                                                 </button>
                                             </div>
                                         
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-760' style={{ visibility: 'hidden' }} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         </div>
