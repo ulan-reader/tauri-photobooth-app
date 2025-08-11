@@ -167,7 +167,7 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                     {/* <img src={image} alt="" /> */}
                     <div className="w-28"></div>
                     <div className="flex flex-col">
-                        <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-0 hover:opacity-100">
+                        <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-20 hover:opacity-100">
                             <Settings size={30} /> {/* Отображаем иконку шестеренки */}
                         </NavLink>
                         <NavLink to='/template'><img src={main_icon} alt="camera icon"  /></NavLink>

@@ -358,7 +358,9 @@ export default function TemplateEditor() {
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
 
-        const object = { x: 0, y: 0, width: 1200, height: 1800 };
+        const object = { x: 0, y: 0, width: 1220, height: 1840 };
+
+
         
 
         
