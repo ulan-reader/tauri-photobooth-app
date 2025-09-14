@@ -170,7 +170,7 @@ export default function MainPage({ active, loading, setLoading, setActive, desig
                         <NavLink to='/settings' className="absolute left-10 top-10 z-10 opacity-20 hover:opacity-100">
                             <Settings size={30} /> {/* Отображаем иконку шестеренки */}
                         </NavLink>
-                        <NavLink to='/template'><img src={main_icon} alt="camera icon"  /></NavLink>
+                        <NavLink to='/template'><img src={main_icon} alt="camera icon" className="opacity-0" /></NavLink>
                         {/* <div style={word}><button onClick={() => navigate('/template')} >НАЧАТЬ ФОТОСЕССИЮ</button></div> */}
                         <canvas ref={canvasRefForSelect} style={{ width: '400px', height: '600px', display: 'none'}} />
                     </div>

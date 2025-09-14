@@ -6,6 +6,7 @@ import '../App.css'
 import { invoke } from "@tauri-apps/api/tauri";
 import { toast, ToastContainer } from "react-toastify";
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
+import { convertFileSrc } from "@tauri-apps/api/tauri";
 import AdminShell from "../components/AdminShell";
 import { writeTextFile, readTextFile } from "@tauri-apps/api/fs";
 import { useStore } from "../admin/store";
@@ -201,7 +202,7 @@ export default function Timer() {
                 </button>
                 <button onClick={saveSchedule}>Сохранить расписание</button>
             </div>
-            {/* <div className="p-4">
+            <div className="p-4">
                 <h1 className="text-xl font-bold mb-4">Настройки товара</h1>
 
                 <div className="flex gap-8">
@@ -284,10 +285,10 @@ export default function Timer() {
                         className="hidden dark:bg-gray-800"
                         />
                     </label>
-                    </div>
                 </div>
-                </div> */}
-            <ToastContainer />
-        </AdminShell>
+            </div>
+        </div>
+        <ToastContainer />
+    </AdminShell>
     )
 }

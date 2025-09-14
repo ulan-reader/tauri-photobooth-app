@@ -10,7 +10,7 @@ import { useStore } from '../admin/store.js';
 import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
 
 export default function CaptureScreen({ onCapture }) {
-    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3, buttonsColor } = useStore();
+    const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3, buttonsColor, yesButtonText, noButtonText } = useStore();
     const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
     usePageNavigation();
     const canvasRefDataImage = useRef(null);
@@ -187,6 +187,7 @@ export default function CaptureScreen({ onCapture }) {
     // Сохранение фото
     const savePhoto = useCallback( async () => {
         // startLiveView();
+        console.log('Сохранение фото', images.length, images);
         setIsButtonDisabled(true);
         setTimeout(() => setIsButtonDisabled(false), (camera.counterCapturePhoto || 3) + 1000);
 
@@ -345,10 +346,10 @@ export default function CaptureScreen({ onCapture }) {
 
     return (
         <div className="flex justify-center items-center">
-            <div className="select-none relative bg-cover bg-center bg-black bg-no-repeat" style={{ width: '1280px', height: '1024px'}}>
+            <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{ width: '1280px', height: '1024px', backgroundImage: background_image_3 }}>
                 <div className='absolute top-10 left-5 w-full h-20 flex justify-center items-center'>
                     {images.map((img) => (
-                        <img src={img} alt="Captured" key={img} />
+                        <img src={img.url} alt="Captured" key={img} />
                     ))}
                 </div>
                 <div className='back-img'></div>
@@ -391,7 +392,34 @@ export default function CaptureScreen({ onCapture }) {
                                             )}
                                         </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack} disabled={isButtonDisabled}>
+                                            {!camera.payment_enabled && (
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700'  onClick={handleBack} disabled={isButtonDisabled}>
+                                                    <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                                </button>
+                                            )}
+                                            {camera.payment_enabled ? (
+                                                <div className='flex-1 flex justify-center items-center'>
+                                                    {!isShooting && forCapture && (
+                                                        <button onClick={startCountdown}>
+                                                            <img src={cameraCapture} className='w-72' alt="Capture Photo" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className='flex justify-center items-center'>
+                                                    {!isShooting && forCapture && (
+                                                        <button onClick={startCountdown}>
+                                                            <img src={cameraCapture} className='w-72' alt="Capture Photo" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {!camera.payment_enabled && (
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }}>
+                                                    <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                                </button>
+                                            )}
+                                            {/* <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack} disabled={isButtonDisabled}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                             <div className='flex justify-center items-center'>
@@ -404,7 +432,7 @@ export default function CaptureScreen({ onCapture }) {
                                             
                                             <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{ visibility: 'hidden', background: buttonsColor.main}}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-                                            </button>
+                                            </button> */}
                                         </div>
                                     </div>
                                 ) : (
@@ -412,7 +440,7 @@ export default function CaptureScreen({ onCapture }) {
                                         <canvas ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
                                         <img src={capturedImage} alt='Captured' style={{ width: 863, height: 763, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
-                                            <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack}>
+                                            {/* <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
                                             </button>
                                         
@@ -427,7 +455,36 @@ export default function CaptureScreen({ onCapture }) {
                                         
                                             <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{ visibility: 'hidden', background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
-                                            </button>
+                                            </button> */}
+                                            {!camera.payment_enabled && (
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' onClick={handleBack}>
+                                                    <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                                </button>
+                                                )}
+                                            {camera.payment_enabled ? (
+                                                <div className='flex-1 flex justify-around items-center gap-20'>
+                                                    <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
+                                                    </button>
+                                                    <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className='flex-1 flex justify-around items-center gap-20'>
+                                                    <button className='text-red-700 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={reshootPhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>НЕТ</span><br />ПЕРЕСНЯТЬ ФОТО
+                                                    </button>
+                                                    <button className='text-lime-500 border-2 rounded-3xl px-12 py-8 bg-white font-bold' onClick={savePhoto} disabled={isButtonDisabled}>
+                                                        <span className='text-5xl '>ДА</span><br />НРАВИТСЯ ФОТО
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {!camera.payment_enabled && (
+                                                <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white bg-red-700' style={{ visibility: 'hidden' }} onClick={handleBack}>
+                                                    <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД
+                                                    </button>
+                                            )}
                                         </div>
                                     </div>
                                 )}

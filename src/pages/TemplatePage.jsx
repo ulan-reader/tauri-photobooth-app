@@ -29,14 +29,27 @@ export default function TemplatePage({ design, setDesign }) {
             console.log("init camera")
            
         
-            if (!camera.isCameraOn) {
-                await invoke('initialize_camera');
-                setCamera({ isCameraOn: true });
+            // if (!camera.isCameraOn) {
+            //     await invoke('initialize_camera');
+            //     setCamera({ isCameraOn: true });
+            // }
+            if (camera.payment_enabled) {
+                const settings = await invoke('read_settings');
+                setCamera({ counterCapturePhoto: settings.counter_capture_photo, payment_enabled: settings.payment_enabled });
+                
+                navigate('/payment');
             }
-            navigate('/capture')
+            else {
+                if (!camera.isCameraOn) {
+                    await invoke('initialize_camera');
+                    setCamera({ isCameraOn: true });
+                }
+                navigate('/capture')
+            };
+            // navigate ('/capture')
 
-            setCamera({ isLiveView: true });
-            await invoke('start_live_view');
+            // setCamera({ isLiveView: true });
+            // await invoke('start_live_view');
         } catch(error) {
             // toast.error("Камера не подключена");
             console.log("Error: ", error);
@@ -63,7 +76,6 @@ export default function TemplatePage({ design, setDesign }) {
                 <div className='back-img'></div>
                 <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
                     <div className='w-full flex flex-col gap-9 justify-center items-center'>
-                        <b className='text-6xl stroke'>ВЫБЕРИТЕ ШАБЛОН</b>
                         <div className='flex flex-col w-full px-20 gap-16'>
                             <div className='flex items-center justify-center'>
                                 <img

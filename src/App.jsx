@@ -16,6 +16,8 @@ import PrinterPopup from './components/PrinterPopup.jsx';
 import ListPage from './pages/ListPage.jsx';
 import CheckLicensePage from './pages/CheckLicensePage.jsx';
 import { useStore } from './admin/store.js';
+import PaymentPage from './pages/PaymentPage.jsx';
+import PaymentFailed from './pages/PaymentFailed.jsx';
 
 export function CheckLicense({ children }) {
   const { license } = useStore();
@@ -62,6 +64,8 @@ export default function App(){
                         <Routes>
                           <Route path="/" element={<MainPage active={showPopup} setLoading={setLoading} loading={loading} setActive={setShowPopup} design={design}/>}/>
                           <Route path="/template" element={<TemplatePage design={design} setDesign={setDesign} />} />
+                          <Route path="/payment" element={<PaymentPage />} />
+                          <Route path="/payment-failed" element={<PaymentFailed />} />
                           <Route path="/capture" element={<CapturePage onCapture={setImages}/>} />
                           <Route path="/print" element={<PrintPage design={design} images={images} onPrint={() => {}} setDesign={setDesign} />} />
                           <Route path="/list" element={<ListPage />} />

@@ -101,6 +101,7 @@ export default function PrintPage({ images, design, setDesign }) {
   }
 
   const handlePrint = async () => {
+    toast.info('Отправлено на печать...', { type: 'info' });
     setIsPrinting(true);
     const canvas = canvasRef.current;
     if (canvas) {

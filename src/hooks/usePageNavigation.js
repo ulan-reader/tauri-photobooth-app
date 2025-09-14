@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listen } from '@tauri-apps/api/event';
 import { useStore } from '../admin/store';
+import { invoke } from '@tauri-apps/api/tauri';
 
 export function usePageNavigation() {
     const navigate = useNavigate();
@@ -19,11 +20,11 @@ export function usePageNavigation() {
       });
   
       const cameraStatusCheck = async () => {
-        if (camera.isLiveView) {
-          await invoke('stop_live_view');
-          setCamera({ ...camera, isLiveView: false });
-          navigate('/');
-        }
+        // if (camera.isLiveView) {
+        //   await invoke('stop_live_view');
+        //   setCamera({ ...camera, isLiveView: false });
+        //   navigate('/');
+        // }
 
         if (project.isCurrent) {
           navigate('/');
