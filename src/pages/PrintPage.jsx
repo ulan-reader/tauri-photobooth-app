@@ -23,7 +23,7 @@ import { Settings } from "lucide-react"
 
 export default function PrintPage({ images, design, setDesign }) {
   // const [bgImage, setBgImage] = useState(localStorage.getItem("back_4") || `url(${back_img})`);
-  const { canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference, background_image_4, buttonsColor } = useStore();
+  const { camera, canvases, currentCanvasId, switchCanvas, updateObjectProps, setCamera, chromokey, reference, background_image_4, buttonsColor } = useStore();
   const currentCanvas = canvases.find(canvas => canvas.id === currentCanvasId);
   usePageNavigation();
   const canvasRef = useRef(null);
@@ -58,12 +58,12 @@ export default function PrintPage({ images, design, setDesign }) {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design);
-      drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design);
+      drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design, camera.mirorred);
+      drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design, camera.mirrored);
 
       // Второй вызов отрисовки через небольшой промежchromokey.isEnabled ? chromokey.backgroundImage : reference
       const timeoutId = setTimeout(() => {
-        drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design);
+        drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.isEnabled ? chromokey.backgroundImage : reference, chromokey.isEnabled, !design, camera.mirrored);
       }, 500); // Задержка в 50 миллисекунд (можно варьировать)
       // Очистка таймера, если компонент размонтируется
       const imageData = canvas.toDataURL('image/png');

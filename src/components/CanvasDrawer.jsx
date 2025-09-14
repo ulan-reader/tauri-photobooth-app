@@ -193,11 +193,10 @@ const styles = {
 };
 
 // Функция для рисования изображения в режиме выбора
-export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, backImage, design) => {
+export const drawImages = ( ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, backImage, design, mirrored) => {
     // Create a new image object if it doesn't exist or if src has changed
     if (!obj.imgObject || obj.imgObject.src !== obj.src) {
         if (obj.imgObject) {
-            // Clean up old image object
             obj.imgObject.onload = null;
             obj.imgObject.onerror = null;
         }
@@ -206,11 +205,9 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
         obj.imgObject.src = obj.src;
     }
 
-    // Handle image loading errors only if we have a src
     if (obj.src) {
         obj.imgObject.onerror = () => {
             console.error('Failed to load image:', obj.src);
-            // Draw a placeholder or error state only if we have a src
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
         };
@@ -227,16 +224,28 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
         } else {
             const drawImage = () => {
                 setShadow(ctx, obj);
-                ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
+
+                ctx.save();
+                if (mirrored) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(
+                        obj.imgObject,
+                        -obj.width / 2 * -1 - obj.width,
+                        -obj.height / 2,
+                        obj.width,
+                        obj.height
+                    );
+                } else {
+                    ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
+                }
+                ctx.restore();
+
                 offShadow(ctx);
                 if (obj.strokeWidth) setStroke(ctx, obj);
             };
 
-            if (obj.imgObject.complete) {
-                drawImage();
-            } else {
-                obj.imgObject.onload = drawImage;
-            }
+            if (obj.imgObject.complete) drawImage();
+            else obj.imgObject.onload = drawImage;
         }
     } else {
         if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(obj.numberImage)) {
@@ -245,7 +254,7 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
 
             const drawImage = () => {
                 if (chromokeyEnabled) drawCromakeyBackgroundImage(ctx, obj, chromokeyBackgroundImage, backImage);
-                
+
                 const imgAspectRatio = obj.imgObject.width / obj.imgObject.height;
                 const objectAspectRatio = obj.width / obj.height;
                 let drawWidth, drawHeight, offsetX, offsetY;
@@ -267,35 +276,55 @@ export const drawImages = (ctx, obj, bool, chromokeyBackgroundImage, chromokeyEn
                 ctx.beginPath();
                 ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
                 ctx.clip();
-                ctx.scale(-1, 1);
-                ctx.drawImage(
-                    obj.imgObject,
-                    (offsetX - obj.width / 2) * -1 - drawWidth, // зеркалируем по X
-                    offsetY - obj.height / 2,
-                    drawWidth,
-                    drawHeight
-                );
+
+                if (mirrored) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(
+                        obj.imgObject,
+                        (offsetX - obj.width / 2) * -1 - drawWidth,
+                        offsetY - obj.height / 2,
+                        drawWidth,
+                        drawHeight
+                    );
+                } else {
+                    ctx.drawImage(
+                        obj.imgObject,
+                        offsetX - obj.width / 2,
+                        offsetY - obj.height / 2,
+                        drawWidth,
+                        drawHeight
+                    );
+                }
                 ctx.restore();
             };
 
-            if (obj.imgObject.complete) {
-                drawImage();
-            } else {
-                obj.imgObject.onload = drawImage;
-            }
+            if (obj.imgObject.complete) drawImage();
+            else obj.imgObject.onload = drawImage;
         } else {
             const drawImage = () => {
                 setShadow(ctx, obj);
-                ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
+
+                ctx.save();
+                if (mirrored) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(
+                        obj.imgObject,
+                        -obj.width / 2 * -1 - obj.width,
+                        -obj.height / 2,
+                        obj.width,
+                        obj.height
+                    );
+                } else {
+                    ctx.drawImage(obj.imgObject, -obj.width / 2, -obj.height / 2, obj.width, obj.height);
+                }
+                ctx.restore();
+
                 offShadow(ctx);
                 if (obj.strokeWidth) setStroke(ctx, obj);
             };
 
-            if (obj.imgObject.complete) {
-                drawImage();
-            } else {
-                obj.imgObject.onload = drawImage;
-            }
+            if (obj.imgObject.complete) drawImage();
+            else obj.imgObject.onload = drawImage;
         }
     }
 };
@@ -368,7 +397,7 @@ function drawDashedCenterLines(ctx, canvasWidth, canvasHeight, object) {
     ctx.setLineDash([]);
 }
 
-export const drawMyCanvas = (ctx, canvas, currentCanvas, bool, chromokeyBackgroundImage, chromokeyEnabled, design) => {
+export const drawMyCanvas = (ctx, canvas, currentCanvas, bool, chromokeyBackgroundImage, chromokeyEnabled, design, mirrored) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Устанавливаем размеры холста
@@ -415,7 +444,7 @@ export const drawMyCanvas = (ctx, canvas, currentCanvas, bool, chromokeyBackgrou
                 break;
             case 'image':
                 // drawCromakeyBackgroundImage(ctx, obj, chromokeyBackgroundImage);
-                drawImages(ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, false, design);
+                drawImages(ctx, obj, bool, chromokeyBackgroundImage, chromokeyEnabled, false, design, mirrored);
                 break;
             default:
                 break;

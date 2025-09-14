@@ -207,12 +207,12 @@ export default function Chromakey() {
 
     return (
         <AdminShell props={props}>
-            <div className="flex ">
+            <div className="flex">
                 <div className="relative w-3/5 h-full">
                     <canvas ref={backgroundImageRef} width="530" height="530" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
                     <canvas ref={canvasRef} width="530" height="530" style={{ position: 'absolute', zIndex: 2 }} />
                 </div>
-                <div className="flex flex-col justify-between w-2/5 gap-4">
+                <div className="flex flex-col justify-between w-2/5 gap-2">
                     <div className="grid grid-cols-2 gap-x-2 gap-y-4">
                         <button className={`p-2 rounded-lg border ${camera.isLiveView === true ? 'bg-blue-500' : 'bg-red-500'} text-white`} onClick={toggleLiveView}>Включить камеру</button>
                         <button className={`p-2 rounded-lg border ${chromokey.isEnabled ? 'bg-blue-500' : 'bg-red-500'} text-white`} onClick={() => setChromokey({ isEnabled: !chromokey.isEnabled })}>Chromakey {chromokey.isEnabled ? 'включен' : 'выключен'}</button>
@@ -286,6 +286,19 @@ export default function Chromakey() {
                             type='checkbox'
                             checked={camera.toggleAutofocus}
                             onChange={toggleAutofocus}
+                            className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
+                    </div>
+                    <div className='flex gap-4 items-center justify-start flex-row' >
+
+                        {camera.mirrored ?
+                        (<span className=''>Отзеркаливание включено</span>
+                        ) : 
+                        (<span className=''>Отзеркаливание выключено</span>)
+                        }
+                        <input
+                            type='checkbox'
+                            checked={camera.mirrored}
+                            onChange={() => setCamera({ mirrored: !camera.mirrored })}
                             className='h-8 pl-2 border border-gray-300 dark:border-gray-600 rounded-md w-16 dark:bg-gray-800'/>
                     </div>
                     <div className="flex justify-between">

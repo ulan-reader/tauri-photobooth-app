@@ -21,6 +21,9 @@ export default function CaptureScreen({ onCapture }) {
 
     const [isCameraReady, setIsCameraReady] = useState(true);
 
+    const targetWidth = 860;
+    const targetHeight = 760;
+
     const [capturedImage, setCapturedImage] = useState(null);
     const [countdown, setCountdown] = useState(camera.counterCapturePhoto);
     const [isShooting, setIsShooting] = useState(false);
@@ -40,8 +43,8 @@ export default function CaptureScreen({ onCapture }) {
 
         const bgCanvas = backgroundImageRef.current;
         const bgCtx = bgCanvas.getContext("2d");
-        bgCanvas.width = 860;
-        bgCanvas.height = 760;
+        bgCanvas.width = targetWidth;
+        bgCanvas.height = targetHeight;
         drawCromakeyBackgroundImage(bgCtx, bgCanvas, chromokey.backgroundImage, true)
     }, [chromokey]);
 
@@ -53,8 +56,8 @@ export default function CaptureScreen({ onCapture }) {
         image.src = base64Image;
 
         image.onload = () => {
-            canvas.width = 860;
-            canvas.height = 760;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
             const canvasAspect = canvas.width / canvas.height;
             const imageAspect = image.width / image.height;
 
@@ -292,22 +295,31 @@ export default function CaptureScreen({ onCapture }) {
 
     useEffect(() => {
         const canvas = canvasRefLayout.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false);
-            const timeoutId = setTimeout(() => {
-                drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false);
-              }, 50); // Задержка в 50 миллисекунд (можно варьировать)
-              // Очистка таймера, если компонент размонтируется
-            const imageData = canvas.toDataURL('image/png');
-            return () => {
-                clearTimeout(timeoutId);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                canvas.width = 0;
-                canvas.height = 0;
+        if (!canvas || !currentCanvas) return;
+
+        // Устанавливаем внутренний размер (важно для резкости)
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        // Контролируем CSS-размеры отдельно (чтобы не ломать layout)
+        canvas.style.width = `${Math.min(270, targetWidth)}px`; // можно подкорректировать под ваш UI
+        canvas.style.height = `${Math.min(400, targetHeight)}px`;
+        canvas.style.opacity = 1; // временно показываем — если вы хотите скрывать, уберите это
+
+        const ctx = canvas.getContext('2d');
+        // drawMyCanvas должен уметь работать с промисами/async загрузкой картинок внутри
+        drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false, camera.mirrored);
+
+        // Повторный вызов через небольшой таймаут (часто помогает, если background загружается асинхронно)
+        const timeoutId = setTimeout(() => {
+            drawMyCanvas(ctx, canvas, currentCanvas, false, chromokey.backgroundImage, chromokey.isEnabled, false, camera.mirrored);
+        }, 80);
+
+        return () => {
+            clearTimeout(timeoutId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Не обнуляем width/height — иначе при быстрых переключениях будут проблемы с рендером.
         };
-        }
-    }, [images]);
+    }, [currentCanvas, images, capturedImage, chromokey.backgroundImage, chromokey.isEnabled]);
 
     useEffect(() => {
         return () => {
@@ -347,11 +359,6 @@ export default function CaptureScreen({ onCapture }) {
     return (
         <div className="flex justify-center items-center">
             <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{ width: '1280px', height: '1024px', backgroundImage: background_image_3 }}>
-                <div className='absolute top-10 left-5 w-full h-20 flex justify-center items-center'>
-                    {images.map((img) => (
-                        <img src={img.url} alt="Captured" key={img} />
-                    ))}
-                </div>
                 <div className='back-img'></div>
                 <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center text-white text-2xl z-10'>
                     <div className='flex w-screen justify-center items-center'>
@@ -368,11 +375,11 @@ export default function CaptureScreen({ onCapture }) {
                                 )}
                                 {!capturedImage ? (
                                     <div className='flex flex-col items-center w-full gap-10'>
-                                        <div className='border-solid border-2 capture-container rounded-md' style={{ width: 863, height: 763, position: 'relative' }}>
+                                        <div className='border-solid border-2 capture-container rounded-md' style={{ marginLeft: '220px', width: targetWidth + 3, height: targetHeight + 3, position: 'relative' }}>
                                             {isCameraReady && (
-                                                <div style={{ width: 860, height: 760, position: 'relative' }}>
-                                                    <canvas className='rounded-md' ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                                    <canvas className='rounded-md' ref={canvasRefMain} width="860" height="760" style={{ position: 'absolute', zIndex: 2, scale: '-1 1' }} />
+                                                <div style={{ width: targetWidth, height: targetHeight, position: 'relative' }}>
+                                                    <canvas className='rounded-md' ref={backgroundImageRef} style={{ width: targetWidth, height: targetHeight, position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
+                                                    <canvas className='rounded-md' ref={canvasRefMain} style={{ width: targetWidth, height: targetHeight, position: 'absolute', zIndex: 2, transform: camera.mirrored ? "scaleX(-1)" : "none" }} />
                                                 </div>
                                             )}
                                             {isCameraReady && isShooting && (
@@ -437,8 +444,8 @@ export default function CaptureScreen({ onCapture }) {
                                     </div>
                                 ) : (
                                     <div className='flex flex-col items-center w-full gap-10'>
-                                        <canvas ref={backgroundImageRef} width="860" height="760" style={{ position: 'absolute', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
-                                        <img src={capturedImage} alt='Captured' style={{ width: 863, height: 763, position: 'relative', zIndex: 2, scale: '-1 1' }} className='border-solid border-2 capture-container rounded-md object-cover' />
+                                        <canvas ref={backgroundImageRef} style={{ marginLeft: '220px', width: targetWidth, height: targetHeight, position: 'relative', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
+                                        <img src={capturedImage} alt='Captured' style={{ marginLeft: '220px', width: targetWidth, height: targetHeight, position: 'relative', zIndex: 2, transform: camera.mirrored ? "scaleX(-1)" : "none" }} className='border-solid border-2 capture-container rounded-md object-cover' />
                                         <div className='h-40 flex justify-between items-center w-full'>
                                             {/* <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД

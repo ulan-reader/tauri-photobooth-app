@@ -65,7 +65,8 @@ export const useStore = create(devtools((set) => ({
     isLiveView: false,
     counterCapturePhoto: 3,
     payment_enabled: false,
-    toggleAutofocus: false
+    toggleAutofocus: false,
+    mirrored: true
   },
 
   setCamera: (updates) => set((state) => ({ camera: { ...state.camera, ...updates } })),
