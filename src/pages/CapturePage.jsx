@@ -8,6 +8,7 @@ import cameraCapture from '../assets/cameraCapture.png';
 import { usePageNavigation } from '../hooks/usePageNavigation.js';
 import { useStore } from '../admin/store.js';
 import { drawCromakeyBackgroundImage, drawMyCanvas } from '../components/CanvasDrawer.jsx'
+import testImage from '../assets/Filtered_images/test_image-1.jpg'
 
 export default function CaptureScreen({ onCapture }) {
     const { camera, setCamera, chromokey, setChromokey, canvases, currentCanvasId, updateObjectProps, switchCanvas, background_image_3, buttonsColor, yesButtonText, noButtonText } = useStore();
@@ -21,8 +22,8 @@ export default function CaptureScreen({ onCapture }) {
 
     const [isCameraReady, setIsCameraReady] = useState(true);
 
-    const targetWidth = 860;
-    const targetHeight = 760;
+    const targetWidth = 740;
+    const targetHeight = 600;
 
     const [capturedImage, setCapturedImage] = useState(null);
     const [countdown, setCountdown] = useState(camera.counterCapturePhoto);
@@ -356,6 +357,32 @@ export default function CaptureScreen({ onCapture }) {
         navigate('/template');
     }
 
+    const images_for_filter = [
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+        testImage,
+    ];
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const prevSlide = () => {
+        const currentIndex = images_for_filter.findIndex(t => t.id === currentCanvasId);
+        const prevIndex = (currentIndex < images_for_filter.length - 1) ? currentIndex + 1 : 0;
+        switchCanvas(images_for_filter[prevIndex].id);
+        setCurrentIndex(prevIndex);
+    };
+    const nextSlide = () => {
+        const currentIndex = images_for_filter.findIndex(t => t.id === currentCanvasId);
+        const nextIndex = (currentIndex > 0) ? currentIndex - 1 : images_for_filter.length - 1;
+        switchCanvas(images_for_filter[nextIndex].id);
+        setCurrentIndex(nextIndex);
+    };
+
     return (
         <div className="flex justify-center items-center">
             <div className="select-none relative bg-cover bg-center bg-no-repeat" style={{ width: '1280px', height: '1024px', backgroundImage: background_image_3 }}>
@@ -446,6 +473,45 @@ export default function CaptureScreen({ onCapture }) {
                                     <div className='flex flex-col items-center w-full gap-10'>
                                         <canvas ref={backgroundImageRef} style={{ marginLeft: '220px', width: targetWidth, height: targetHeight, position: 'relative', zIndex: 1, display: chromokey.isEnabled ? 'block' : 'none' }} />
                                         <img src={capturedImage} alt='Captured' style={{ marginLeft: '220px', width: targetWidth, height: targetHeight, position: 'relative', zIndex: 2, transform: camera.mirrored ? "scaleX(-1)" : "none" }} className='border-solid border-2 capture-container rounded-md object-cover' />
+                                        <div className="flex items-center justify-center w-full max-w-4xl mx-auto">
+                                            <img
+                                                onClick={prevSlide}
+                                                className="h-20 cursor-pointer transform -scale-x-100 hover:opacity-70 transition"
+                                                src={templateTriangle}
+                                                alt="Previous"
+                                            />
+                                            {/* Контейнер слайдера */}
+                                            <div className="relative flex items-center justify-center w-[400px] h-[150px] overflow-hidden mx-4">
+                                                {/* Предыдущее изображение */}
+                                                <img
+                                                src={images_for_filter[(currentIndex + 1 + images_for_filter.length) % images_for_filter.length]}
+                                                alt="Фильтр"
+                                                className="w-1/4 h-full object-contain opacity-50 cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                onClick={prevSlide}
+                                                />
+
+                                                {/* Текущее изображение */}
+                                                <img
+                                                src={images_for_filter[currentIndex]}
+                                                alt="Фильтр"
+                                                className="w-1/4 h-full object-contain mx-4 border-4 border-blue-500 rounded-lg cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                />
+
+                                                {/* Следующее изображение */}
+                                                <img
+                                                src={images_for_filter[(currentIndex - 1 + images_for_filter.length) % images_for_filter.length]}
+                                                alt="Фильтр"
+                                                className="w-1/4 h-full object-contain opacity-50 cursor-pointer transition-transform duration-300 hover:scale-105"
+                                                onClick={nextSlide}
+                                                />
+                                            </div>
+                                            <img
+                                                onClick={nextSlide}
+                                                className="h-20 cursor-pointer hover:opacity-70 transition"
+                                                src={templateTriangle}
+                                                alt="Next"
+                                            />
+                                        </div>
                                         <div className='h-40 flex justify-between items-center w-full'>
                                             {/* <button className='w-36 h-20 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg border-white' style={{background: buttonsColor.main}} onClick={handleBack}>
                                                 <img className='w-5 transform -scale-x-100' src={templateTriangle} alt="Back" /> НАЗАД

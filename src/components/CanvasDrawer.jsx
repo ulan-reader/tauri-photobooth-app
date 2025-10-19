@@ -204,7 +204,7 @@ export const drawImages = ( ctx, obj, bool, chromokeyBackgroundImage, chromokeyE
         obj.imgObject.crossOrigin = "anonymous";
         obj.imgObject.src = obj.src;
     }
-
+    let objectName = obj.nameObject || 'undefined';
     if (obj.src) {
         obj.imgObject.onerror = () => {
             console.error('Failed to load image:', obj.src);
@@ -226,7 +226,7 @@ export const drawImages = ( ctx, obj, bool, chromokeyBackgroundImage, chromokeyE
                 setShadow(ctx, obj);
 
                 ctx.save();
-                if (mirrored) {
+                if (mirrored && objectName[0]+objectName[1]+objectName[2]+objectName[3] !== "Изоб") {
                     ctx.scale(-1, 1);
                     ctx.drawImage(
                         obj.imgObject,
@@ -277,7 +277,7 @@ export const drawImages = ( ctx, obj, bool, chromokeyBackgroundImage, chromokeyE
                 ctx.rect(-obj.width / 2, -obj.height / 2, obj.width, obj.height);
                 ctx.clip();
 
-                if (mirrored) {
+                if (mirrored && objectName[0]+objectName[1]+objectName[2]+objectName[3] !== "Изоб") {
                     ctx.scale(-1, 1);
                     ctx.drawImage(
                         obj.imgObject,
@@ -305,7 +305,7 @@ export const drawImages = ( ctx, obj, bool, chromokeyBackgroundImage, chromokeyE
                 setShadow(ctx, obj);
 
                 ctx.save();
-                if (mirrored) {
+                if (mirrored && objectName[0]+objectName[1]+objectName[2]+objectName[3] !== "Изоб") {
                     ctx.scale(-1, 1);
                     ctx.drawImage(
                         obj.imgObject,
